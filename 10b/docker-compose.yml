@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: hospital-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=hospitaldb
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - hospital-network
+
+  # We're commenting out the PostgreSQL service to avoid duplicates
+  # We'll use the existing PostgreSQL from 10a
+  # postgres:
+  #  image: postgres:latest
+  #  container_name: hospital-postgres
+  #  ports:
+  #    - "5432:5432"
+  #  environment:
+  #    POSTGRES_DB: hospitaldb
+  #    POSTGRES_USER: postgres
+  #    POSTGRES_PASSWORD: postgres
+  #  volumes:
+  #    - postgres_data:/var/lib/postgresql/data
+  #  networks:
+  #    - hospital-network
+
+volumes:
+  mongodb_data:
+  # postgres_data:
+
+networks:
+  hospital-network:
+    driver: bridge

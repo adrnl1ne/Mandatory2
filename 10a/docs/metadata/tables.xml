@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemaMeta xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://schemaspy.org/xsd/6/schemameta.xsd">
+    <comments>Hospital Management System Database</comments>
+    <tables>
+        <table name="Departments">
+            <comment>Stores information about hospital departments including specialties and locations</comment>
+        </table>
+        <table name="Staff">
+            <comment>Stores details about hospital staff members including doctors, nurses and other medical professionals</comment>
+        </table>
+        <table name="Patients">
+            <comment>Stores information about registered hospital patients</comment>
+        </table>
+        <table name="Appointments">
+            <comment>Stores scheduled appointments between patients and medical staff</comment>
+        </table>
+        <table name="MedicalRecords">
+            <comment>Stores patient medical visit records including diagnoses and treatments</comment>
+        </table>
+        <table name="Medications">
+            <comment>Stores information about medications available in the hospital</comment>
+        </table>
+        <table name="Prescriptions">
+            <comment>Stores prescriptions given to patients by medical staff</comment>
+        </table>
+    </tables>
+</schemaMeta>

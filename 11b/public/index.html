@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stripe Payment Integration</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Stripe Payment Demo</h1>
+    
+    <div class="product-container">
+      <div class="product-item">
+        <h3>Basic Plan</h3>
+        <p class="price">$10</p>
+        <button class="buy-btn" data-amount="10">Purchase</button>
+      </div>
+      
+      <div class="product-item">
+        <h3>Premium Plan</h3>
+        <p class="price">$25</p>
+        <button class="buy-btn" data-amount="25">Purchase</button>
+      </div>
+      
+      <div class="product-item">
+        <h3>Enterprise Plan</h3>
+        <p class="price">$50</p>
+        <button class="buy-btn" data-amount="50">Purchase</button>
+      </div>
+    </div>
+    
+    <div id="payment-form-container" class="hidden">
+      <h2>Complete Your Purchase</h2>
+      <p id="purchase-amount"></p>
+      
+      <form id="payment-form">
+        <div id="card-element">
+          <!-- Stripe Card Element will be inserted here -->
+        </div>
+        <div id="card-errors" role="alert"></div>
+        
+        <button type="submit" id="submit-button">
+          <div class="spinner hidden" id="spinner"></div>
+          <span id="button-text">Pay Now</span>
+        </button>
+      </form>
+      
+      <div id="payment-result" class="hidden">
+        <h3>Payment <span id="payment-status"></span></h3>
+        <p id="payment-message"></p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>

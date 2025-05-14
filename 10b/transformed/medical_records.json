@@ -1,0 +1,32 @@
+[
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "diagnosis": "Mild hypertension",
+    "treatment": "Prescribed Lisinopril 10mg once daily"
+  },
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "diagnosis": "Tension headaches",
+    "treatment": "Prescribed Ibuprofen as needed"
+  },
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "diagnosis": "Healthy child, normal development",
+    "treatment": "No treatment necessary"
+  }
+]

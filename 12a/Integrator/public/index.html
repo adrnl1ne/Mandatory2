@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webhook Integrator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #dff0d8;
+      color: #3c763d;
+    }
+    .error {
+      background-color: #f2dede;
+      color: #a94442;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .hidden {
+      display: none;
+    }
+    h3 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Webhook Integrator</h1>
+  <p>This application integrates with the webhook system at <a href="#" id="webhookServerUrl" target="_blank"></a></p>
+  
+  <div class="container">
+    <div class="card">
+      <h3>Webhook Registration</h3>
+      <p>Current webhook endpoint: <code id="publicUrl"></code></p>
+      <div class="button-group">
+        <button id="registerBtn">Register Webhook</button>
+      </div>
+      <div id="registerStatus" class="status hidden"></div>
+      <div id="webhookInfo" class="hidden">
+        <h4>Registered Webhook Details:</h4>
+        <pre id="webhookDetails"></pre>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>Test Webhook</h3>
+      <p>Send a ping to test all registered webhooks:</p>
+      <div class="button-group">
+        <button id="pingBtn">Send Ping</button>
+      </div>
+      <div id="pingStatus" class="status hidden"></div>
+    </div>
+    
+    <div class="card">
+      <h3>Received Webhooks</h3>
+      <p>The most recent webhooks received:</p>
+      <div id="noWebhooks">No webhooks received yet.</div>
+      <div id="receivedWebhooks"></div>
+    </div>
+  </div>
+  
+  <script>
+    // Fetch configuration from the server
+    async function fetchConfig() {
+      const response = await fetch('/api/config');
+      const data = await response.json();
+      
+      // Update the UI with configuration
+      document.getElementById('webhookServerUrl').href = data.webhookServer;
+      document.getElementById('webhookServerUrl').textContent = data.webhookServer;
+      document.getElementById('publicUrl').textContent = `${data.publicUrl}/webhook`;
+    }
+
+    // And the rest of your JavaScript...
+    
+    // Start the application when the page loads
+    window.addEventListener('DOMContentLoaded', initPage);
+  </script>
+</body>
+</html>

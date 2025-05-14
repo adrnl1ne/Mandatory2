@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple GraphQL Subscription Test</title>
+  <script src="https://unpkg.com/subscriptions-transport-ws@0.9.18/browser/client.js"></script>
+</head>
+<body>
+  <h1>GraphQL Subscription Test</h1>
+  
+  <div>
+    <h3>Status: <span id="status">Connecting...</span></h3>
+    <h3>Log:</h3>
+    <pre id="log" style="background:#f0f0f0; padding:10px; height:200px; overflow:auto;"></pre>
+    
+    <h3>Create User:</h3>
+    <form id="form">
+      <input type="text" id="name" placeholder="Name" required>
+      <input type="email" id="email" placeholder="Email" required>
+      <button type="submit">Create User</button>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // Helper function to log to both console and UI
+    function log(message, data) {
+      const logElement = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      
+      if (data) {
+        console.log(message, data);
+        try {
+          const json = JSON.stringify(data, null, 2);
+          logElement.textContent = `${timestamp} - ${message}\n${json}\n\n` + logElement.textContent;
+        } catch (e) {
+          logElement.textContent = `${timestamp} - ${message}: [Complex Object]\n\n` + logElement.textContent;
+        }
+      } else {
+        console.log(message);
+        logElement.textContent = `${timestamp} - ${message}\n\n` + logElement.textContent;
+      }
+    }
+
+    // Create WebSocket client
+    const wsClient = new window.SubscriptionsTransportWs.SubscriptionClient(
+      'ws://localhost:4000/graphql',
+      { 
+        reconnect: true,
+        connectionCallback: (err) => {
+          if (err) {
+            log('Connection error', err);
+            document.getElementById('status').textContent = 'Connection Error';
+          } else {
+            log('Connected successfully');
+            document.getElementById('status').textContent = 'Connected';
+          }
+        }
+      }
+    );
+    
+    log('WebSocket client created');
+    
+    // Set up subscription
+    try {
+      const subscription = wsClient.request({
+        query: `subscription { userCreated { id name email } }`
+      });
+      
+      log('Subscription requested');
+      
+      subscription.subscribe({
+        next(data) {
+          log('Received data', data);
+        },
+        error(err) {
+          log('Subscription error', {
+            message: err.message,
+            type: err.constructor.name,
+            details: Object.keys(err)
+          });
+        },
+        complete() {
+          log('Subscription completed');
+        }
+      });
+    } catch (err) {
+      log('Error setting up subscription', {
+        message: err.message,
+        stack: err.stack
+      });
+    }
+    
+    // Form submission to create a user
+    document.getElementById('form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const resultDiv = document.getElementById('result');
+      
+      log(`Creating user: ${name}, ${email}`);
+      
+      try {
+        const response = await fetch('http://localhost:4000/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              mutation ($name: String!, $email: String!) {
+                createUser(name: $name, email: $email) {
+                  id name email
+                }
+              }
+            `,
+            variables: { name, email }
+          })
+        });
+        
+        const result = await response.json();
+        log('Mutation result', result);
+        
+        if (result.errors) {
+          resultDiv.innerHTML = `<p style="color:red">${result.errors[0].message}</p>`;
+        } else {
+          resultDiv.innerHTML = `<p style="color:green">User created: ${result.data.createUser.name}</p>`;
+          document.getElementById('name').value = '';
+          document.getElementById('email').value = '';
+        }
+      } catch (err) {
+        log('Mutation error', err);
+        resultDiv.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

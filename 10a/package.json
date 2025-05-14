@@ -1,0 +1,29 @@
+{
+  "name": "hospital-management-system",
+  "version": "1.0.0",
+  "description": "Hospital Management System Database",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down -v",
+    "generate-docs": "cd docs && generate-fixed.bat",
+    "test-connection": "node src/test-connection-pg.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rimraf docs/output/*"
+  },
+  "keywords": [
+    "database",
+    "sql",
+    "hospital",
+    "system",
+    "integration"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "mssql": "^10.0.4",
+    "pg": "^8.16.0"
+  }
+}

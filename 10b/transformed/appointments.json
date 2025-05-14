@@ -1,0 +1,68 @@
+[
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "scheduledDateTime": "undefinedTundefined",
+    "status": "Completed",
+    "notes": "Follow-up for heart condition"
+  },
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "scheduledDateTime": "undefinedTundefined",
+    "status": "Completed",
+    "notes": "Initial consultation for headaches"
+  },
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "scheduledDateTime": "undefinedTundefined",
+    "status": "Completed",
+    "notes": "Routine check-up"
+  },
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "scheduledDateTime": "undefinedTundefined",
+    "status": "Scheduled",
+    "notes": "Knee pain assessment"
+  },
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "scheduledDateTime": "undefinedTundefined",
+    "status": "Scheduled",
+    "notes": "Regular pediatric check-up"
+  },
+  {
+    "patient": {
+      "name": "undefined undefined"
+    },
+    "staff": {
+      "name": "undefined undefined"
+    },
+    "scheduledDateTime": "undefinedTundefined",
+    "status": "Scheduled",
+    "notes": "Chest pain investigation"
+  }
+]

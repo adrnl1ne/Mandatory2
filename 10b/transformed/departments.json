@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Cardiology",
+    "location": "Building A, Floor 2"
+  },
+  {
+    "name": "Neurology",
+    "location": "Building B, Floor 3"
+  },
+  {
+    "name": "Pediatrics",
+    "location": "Building A, Floor 1"
+  },
+  {
+    "name": "Orthopedics",
+    "location": "Building C, Floor 2"
+  },
+  {
+    "name": "Emergency",
+    "location": "Building D, Ground Floor"
+  }
+]

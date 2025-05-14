@@ -1,0 +1,44 @@
+[
+  {
+    "gender": "Male",
+    "contact": {
+      "address": "123 Main St, Cityville"
+    },
+    "medicalInfo": {}
+  },
+  {
+    "gender": "Female",
+    "contact": {
+      "address": "456 Oak St, Townsville"
+    },
+    "medicalInfo": {}
+  },
+  {
+    "gender": "Female",
+    "contact": {
+      "address": "789 Pine St, Villageton"
+    },
+    "medicalInfo": {}
+  },
+  {
+    "gender": "Male",
+    "contact": {
+      "address": "101 Elm St, Hamletville"
+    },
+    "medicalInfo": {}
+  },
+  {
+    "gender": "Female",
+    "contact": {
+      "address": "202 Maple St, Boroughtown"
+    },
+    "medicalInfo": {}
+  },
+  {
+    "gender": "Male",
+    "contact": {
+      "address": "303 Cedar St, Districtville"
+    },
+    "medicalInfo": {}
+  }
+]
