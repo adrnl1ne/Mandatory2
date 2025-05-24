@@ -14,7 +14,6 @@ module.exports = async (req, res) => {
   
   // Get webhook server URL and ensure it doesn't end with a slash
   let WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
-  // Remove trailing slash if present to prevent double slash
   if (WEBHOOK_SERVER.endsWith('/')) {
     WEBHOOK_SERVER = WEBHOOK_SERVER.slice(0, -1);
   }
@@ -22,19 +21,22 @@ module.exports = async (req, res) => {
   try {
     console.log(`Sending ping request to ${WEBHOOK_SERVER}/ping`);
     
-    // Use GET request with properly formatted URL
-    const response = await axios({
-      method: 'get',
-      url: `${WEBHOOK_SERVER}/ping`,  // This will now be correctly formatted
+    // Add testPayload parameter for better testing
+    const testPayload = `Ping from ${process.env.VERCEL_URL || 'Integrator'}`;
+    const pingUrl = `${WEBHOOK_SERVER}/ping?testPayload=${encodeURIComponent(testPayload)}`;
+    
+    console.log(`Full ping URL: ${pingUrl}`);
+    
+    // Use axios to make the GET request
+    const response = await axios.get(pingUrl, {
       headers: {
         'Accept': 'application/json'
       },
-      timeout: 5000
+      timeout: 10000
     });
     
-    console.log(`Received response with status ${response.status}`);
+    console.log(`Ping response status: ${response.status}`);
     
-    // Return success response
     return res.status(200).json({
       success: true,
       message: 'Ping sent successfully',
@@ -42,13 +44,38 @@ module.exports = async (req, res) => {
     });
   } catch (error) {
     console.error('Error sending ping:', error.message);
-    console.log('Full error:', error);
     
-    // Return error response
-    return res.status(200).json({
-      success: false,
-      message: `Error pinging webhook server: ${error.message}`,
-      error: error.message
-    });
+    // More detailed error response
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error(`Server responded with status ${error.response.status}`);
+      console.error('Response data:', error.response.data);
+      
+      return res.status(200).json({
+        success: false,
+        message: `Server responded with status ${error.response.status}`,
+        error: error.message,
+        data: error.response.data
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received from server');
+      
+      return res.status(200).json({
+        success: false,
+        message: 'No response received from webhook server',
+        error: error.message
+      });
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error making request:', error.message);
+      
+      return res.status(200).json({
+        success: false,
+        message: 'Error making request to webhook server',
+        error: error.message
+      });
+    }
   }
 };

@@ -175,7 +175,7 @@
       }
     }
     
-    // Send a ping using the server-side proxy
+    // Send a ping using direct GET request to webhook server
     async function sendPing() {
       const pingBtn = document.getElementById('pingBtn');
       const statusElement = document.getElementById('pingStatus');
@@ -186,19 +186,42 @@
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
         
-        // Show user the 404 error is expected and explain what's happening
-        statusElement.className = 'status';
-        statusElement.innerHTML = 'The /ping endpoint doesn\'t exist on the exposee server. ' +
-          'Check the API documentation for the correct ping endpoint or use the API docs link below.';
-          
-        // Provide a link to the API docs
-        const docsLink = document.createElement('div');
-        docsLink.innerHTML = '<br><a href="https://8636-91-101-72-250.ngrok-free.app/api-docs/" target="_blank">' +
-          '<button type="button">View API Documentation</button></a>';
-        statusElement.appendChild(docsLink);
+        // Use fetch with proper CORS mode
+        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/ping?testPayload=Test from ${CONFIG.VERCEL_URL}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          },
+          // No credentials to avoid preflight
+          credentials: 'omit'
+        });
         
+        // Use Text first to prevent JSON parse errors
+        const text = await response.text();
+        let data;
+        
+        try {
+          data = JSON.parse(text);
+          statusElement.className = 'status success';
+          statusElement.innerHTML = 'Ping sent successfully! Check received webhooks in a moment.';
+          console.log('Ping response:', data);
+          
+          // Wait a moment and then check for received webhooks
+          setTimeout(loadReceivedWebhooks, 2000);
+        } catch (jsonError) {
+          console.log('Response was not JSON:', text);
+          if (response.ok) {
+            statusElement.className = 'status success';
+            statusElement.innerHTML = 'Ping request sent successfully!';
+          } else {
+            statusElement.className = 'status error';
+            statusElement.innerHTML = 'Error: Server returned an invalid response';
+          }
+        }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error sending ping:', error);
+        statusElement.className = 'status error';
+        statusElement.innerHTML = `Error: ${error.message}`;
       } finally {
         pingBtn.disabled = false;
       }
