@@ -1,14 +1,12 @@
 {
   "version": 2,
   "public": true,
-  "cleanUrls": true,
-  "trailingSlash": false,
   "builds": [
     { "src": "public/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/webhook", "dest": "/webhook.html" },
     { "handle": "filesystem" },
+    { "src": "/webhook", "dest": "/public/webhook.html" },
     { "src": "/(.*)", "dest": "/public/$1" },
     { "src": "/(.*)", "dest": "/public/index.html" }
   ]
