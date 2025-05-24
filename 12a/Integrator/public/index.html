@@ -175,32 +175,59 @@
       }
     }
     
-    // Send a ping using direct GET request to webhook server
-    async function sendPing() {
+    // Send a ping using direct link
+    function sendPing() {
       const pingBtn = document.getElementById('pingBtn');
       const statusElement = document.getElementById('pingStatus');
       
-      try {
-        pingBtn.disabled = true;
-        statusElement.className = 'status';
-        statusElement.innerHTML = 'Opening ping request...';
-        statusElement.classList.remove('hidden');
-        
-        // Show direct link to ping endpoint
-        statusElement.className = 'status';
-        statusElement.innerHTML = `
-          <p>Ngrok requires manual approval for first-time visitors.</p>
-          <p>Please click this link to send a ping:</p>
-          <a href="https://8636-91-101-72-250.ngrok-free.app/ping?testPayload=Test_From_Integrator" 
-             target="_blank" class="button">Send Ping</a>
-          <p>After clicking, return to this page to see received webhooks.</p>
-        `;
-      } catch (error) {
-        statusElement.className = 'status error';
-        statusElement.innerHTML = `Error: ${error.message}`;
-      } finally {
-        pingBtn.disabled = false;
-      }
+      // Create a clear visual link to the ping endpoint
+      pingBtn.disabled = true;
+      statusElement.className = 'status';
+      
+      // Create a simple form that will work across the Ngrok boundary
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = 'https://8636-91-101-72-250.ngrok-free.app/ping';
+      form.target = 'pingResult';
+      form.style.display = 'inline'; 
+      
+      // Create submit button that looks like our normal buttons
+      const submitBtn = document.createElement('button');
+      submitBtn.type = 'submit';
+      submitBtn.textContent = 'Click to Send Ping';
+      submitBtn.style.backgroundColor = '#4CAF50';
+      
+      // Create hidden iframe to capture result
+      const iframe = document.createElement('iframe');
+      iframe.name = 'pingResult';
+      iframe.style.width = '100%';
+      iframe.style.height = '100px';
+      iframe.style.border = '1px solid #ddd';
+      iframe.style.borderRadius = '4px';
+      iframe.style.marginTop = '10px';
+      
+      // Add instruction text
+      statusElement.innerHTML = '';
+      
+      const instruction = document.createElement('p');
+      instruction.textContent = 'Click the button below to send the ping:';
+      statusElement.appendChild(instruction);
+      
+      // Add form and submit button
+      form.appendChild(submitBtn);
+      statusElement.appendChild(form);
+      statusElement.appendChild(document.createElement('br'));
+      
+      // Add note about iframe
+      const note = document.createElement('p');
+      note.textContent = 'The ping result will appear below:';
+      statusElement.appendChild(note);
+      
+      // Add iframe to see result
+      statusElement.appendChild(iframe);
+      
+      // Re-enable original button
+      pingBtn.disabled = false;
     }
     
     // Function to handle received webhooks display
