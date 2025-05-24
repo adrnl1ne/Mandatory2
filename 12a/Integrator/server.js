@@ -136,8 +136,26 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// API endpoint to ping the exposee server
+// API endpoint to ping the exposee server (POST method - original)
 app.post('/api/ping', async (req, res) => {
+  try {
+    const response = await axios.get(`${WEBHOOK_SERVER}/ping`);
+    res.status(200).json({
+      success: true,
+      message: 'Ping sent successfully',
+      result: response.data
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send ping',
+      error: error.message
+    });
+  }
+});
+
+// API endpoint to ping the exposee server (GET method - added)
+app.get('/api/ping', async (req, res) => {
   try {
     const response = await axios.get(`${WEBHOOK_SERVER}/ping`);
     res.status(200).json({

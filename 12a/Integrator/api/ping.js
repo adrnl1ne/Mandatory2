@@ -15,6 +15,7 @@ module.exports = async (req, res) => {
   // Get webhook server URL
   const WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
   
+  // Process ping request (handles both GET and POST)
   try {
     console.log(`Sending ping request to ${WEBHOOK_SERVER}/ping`);
     
@@ -22,22 +23,17 @@ module.exports = async (req, res) => {
     const response = await axios({
       method: 'get',
       url: `${WEBHOOK_SERVER}/ping`,
+      headers: {
+        'Accept': 'application/json'
+      },
       responseType: 'text',
-      timeout: 10000, // 10 second timeout
-      validateStatus: () => true // Accept any status code
+      timeout: 10000
     });
     
-    console.log(`Received response with status ${response.status}`);
-    
-    // Return success response regardless of the webhook server's response
+    // Return a proper JSON response
     return res.status(200).json({
       success: true,
-      message: 'Ping sent successfully',
-      status: response.status,
-      data: {
-        content: "Webhook server was pinged successfully",
-        responseType: "text"
-      }
+      message: 'Ping sent successfully'
     });
   } catch (error) {
     console.error('Error sending ping:', error.message);
