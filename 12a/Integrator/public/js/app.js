@@ -1,8 +1,3 @@
-// Configuration
-const CONFIG = {
-  VERCEL_URL: "https://12aintegrator.vercel.app",
-  WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
-};
 
 // Storage for webhooks using localStorage
 let receivedWebhooks = [];

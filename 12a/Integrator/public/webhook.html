@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Webhook Endpoint</title>
+  <link rel="icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+UABD/lABg/5QAUP+UAEX/lAAx/5QAIf+UABcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/5QAmP+UAP//lAD//5QA//+UAP//lADw/5QAyP+UAJj/lABWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/5QA1v+UAN3/lACI/5QAd/+UAJj/lACo/5QAw/+UANb/lACz/5QAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+UABD/lAC9/5QAz/+UAEL/lAAB/5QAAP+UAAD/lAAL/5QALv+UAPz/lAD//5QAwv+UABEAAAAAAAAAAAAAAAAAAAAA/5QAf/+UAPH/lABb/5QAAAAAAAAAAAAAAAAAAAD/lAAA/5QAVv+UAOT/lACzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/5QAcf+UAOX/lABV/5QAAAAAAAAAAAAAAAAAAP+UAAD/lABQ/5QA2v+UAFEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAD//wAA//8AAP//AAD//wAA/x8AAP4PAAD8AwAA/AcAAP//AAD//wAA//8AAP//AAD//wAA//8AAA==" type="image/x-icon">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,7 +18,48 @@
 <body>
   <h1>Webhook Endpoint</h1>
   <p>This endpoint is designed to receive webhook events from the webhook server.</p>
-  <p>Since this is a purely client-side application, no actual webhook events can be processed here.</p>
+  <p>Since this is a client-side application, webhook events received here will be displayed on the main page.</p>
   <p><a href="/">Return to main page</a></p>
+  
+  <script>
+    // When this page receives a POST request (a webhook)
+    // Add an entry to the simulated webhook list
+    // Note: This is for demonstration only - client-side pages can't actually
+    // receive POST requests directly, but we can simulate this behavior
+    document.addEventListener('DOMContentLoaded', function() {
+      // Simulate receiving a webhook
+      const simulatedWebhook = {
+        timestamp: new Date().toISOString(),
+        data: {
+          event: "page_loaded",
+          message: "Webhook endpoint page was loaded",
+          source: "webhook_endpoint"
+        }
+      };
+      
+      // Try to add to localStorage
+      try {
+        // Get existing webhooks
+        let receivedWebhooks = [];
+        const storedWebhooks = localStorage.getItem('receivedWebhooks');
+        if (storedWebhooks) {
+          receivedWebhooks = JSON.parse(storedWebhooks);
+        }
+        
+        // Add new webhook
+        receivedWebhooks.unshift(simulatedWebhook);
+        
+        // Keep only last 5
+        if (receivedWebhooks.length > 5) {
+          receivedWebhooks = receivedWebhooks.slice(0, 5);
+        }
+        
+        // Save back to localStorage
+        localStorage.setItem('receivedWebhooks', JSON.stringify(receivedWebhooks));
+      } catch (e) {
+        console.error('Error saving simulated webhook:', e);
+      }
+    });
+  </script>
 </body>
 </html>
