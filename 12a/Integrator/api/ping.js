@@ -6,15 +6,44 @@ module.exports = async (req, res) => {
   const WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
   
   try {
-    // Forward GET request to webhook server
-    const response = await axios.get(`${WEBHOOK_SERVER}/ping`);
+    // Forward GET request to webhook server with proper headers
+    const response = await axios.get(`${WEBHOOK_SERVER}/ping`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      // Important: don't parse as JSON automatically, handle response manually
+      responseType: 'text'
+    });
     
-    // Return the webhook server's response
-    res.status(200).json({
+    // Check if response is JSON or HTML
+    let responseData;
+    
+    try {
+      // Try to parse as JSON
+      responseData = JSON.parse(response.data);
+    } catch (parseError) {
+      // If parsing fails, it's probably HTML
+      console.log("Received non-JSON response from webhook server");
+      
+      // Send a simplified response with the text content
+      return res.status(200).json({
+        success: true,
+        message: 'Ping sent successfully',
+        data: {
+          content: "Webhook server was pinged, but returned HTML content",
+          responseType: "html"
+        }
+      });
+    }
+    
+    // If we get here, the response was valid JSON
+    return res.status(200).json({
       success: true,
       message: 'Ping sent successfully',
-      data: response.data
+      data: responseData
     });
+    
   } catch (error) {
     console.error('Error sending ping:', error.message);
     res.status(500).json({
