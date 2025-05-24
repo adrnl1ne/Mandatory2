@@ -118,7 +118,118 @@
       document.getElementById('publicUrl').textContent = `${data.publicUrl}/webhook`;
     }
 
-    // And the rest of your JavaScript...
+    // Register webhook with the server
+    async function registerWebhook() {
+      const registerBtn = document.getElementById('registerBtn');
+      const statusElement = document.getElementById('registerStatus');
+      
+      try {
+        registerBtn.disabled = true;
+        statusElement.className = 'status';
+        statusElement.innerHTML = 'Registering webhook...';
+        statusElement.classList.remove('hidden');
+        
+        const response = await fetch('/api/register', { method: 'POST' });
+        const data = await response.json();
+        
+        if (response.ok) {
+          statusElement.className = 'status success';
+          statusElement.innerHTML = 'Webhook registered successfully!';
+          
+          // Display webhook details
+          document.getElementById('webhookDetails').textContent = JSON.stringify(data, null, 2);
+          document.getElementById('webhookInfo').classList.remove('hidden');
+        } else {
+          statusElement.className = 'status error';
+          statusElement.innerHTML = `Error: ${data.error || 'Failed to register webhook'}`;
+        }
+      } catch (error) {
+        statusElement.className = 'status error';
+        statusElement.innerHTML = `Error: ${error.message}`;
+      } finally {
+        registerBtn.disabled = false;
+      }
+    }
+    
+    // Send a ping to test the webhook
+    async function sendPing() {
+      const pingBtn = document.getElementById('pingBtn');
+      const statusElement = document.getElementById('pingStatus');
+      
+      try {
+        pingBtn.disabled = true;
+        statusElement.className = 'status';
+        statusElement.innerHTML = 'Sending ping...';
+        statusElement.classList.remove('hidden');
+        
+        const response = await fetch('/api/ping', { method: 'POST' });
+        const data = await response.json();
+        
+        if (response.ok) {
+          statusElement.className = 'status success';
+          statusElement.innerHTML = 'Ping sent successfully!';
+        } else {
+          statusElement.className = 'status error';
+          statusElement.innerHTML = `Error: ${data.error || 'Failed to send ping'}`;
+        }
+      } catch (error) {
+        statusElement.className = 'status error';
+        statusElement.innerHTML = `Error: ${error.message}`;
+      } finally {
+        pingBtn.disabled = false;
+      }
+    }
+    
+    // Function to load received webhooks
+    async function loadReceivedWebhooks() {
+      try {
+        const response = await fetch('/api/received');
+        const data = await response.json();
+        
+        const webhooksContainer = document.getElementById('receivedWebhooks');
+        const noWebhooksElement = document.getElementById('noWebhooks');
+        
+        if (data && data.length > 0) {
+          noWebhooksElement.classList.add('hidden');
+          webhooksContainer.innerHTML = '';
+          
+          data.forEach((webhook, index) => {
+            const webhookElement = document.createElement('div');
+            webhookElement.className = 'status';
+            webhookElement.style.marginBottom = '10px';
+            
+            const timeReceived = new Date(webhook.timestamp).toLocaleString();
+            webhookElement.innerHTML = `
+              <h4>Webhook #${index + 1} - ${timeReceived}</h4>
+              <pre>${JSON.stringify(webhook.data, null, 2)}</pre>
+            `;
+            
+            webhooksContainer.appendChild(webhookElement);
+          });
+        } else {
+          noWebhooksElement.classList.remove('hidden');
+          webhooksContainer.innerHTML = '';
+        }
+      } catch (error) {
+        console.error('Error loading webhooks:', error);
+      }
+    }
+    
+    // Initialize the page
+    function initPage() {
+      // Load configuration
+      fetchConfig();
+      
+      // Set up event listeners
+      document.getElementById('registerBtn').addEventListener('click', registerWebhook);
+      document.getElementById('pingBtn').addEventListener('click', sendPing);
+      
+      // Load received webhooks initially
+      loadReceivedWebhooks();
+      
+      // Refresh webhooks periodically (every 5 seconds)
+      setInterval(loadReceivedWebhooks, 5000);
+    }
     
     // Start the application when the page loads
     window.addEventListener('DOMContentLoaded', initPage);
