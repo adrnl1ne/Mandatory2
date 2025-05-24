@@ -11,6 +11,9 @@ const PUBLIC_URL = process.env.VERCEL_URL ?
 // In-memory storage for webhooks (resets when serverless function is cold)
 let receivedWebhooks = [];
 
+// In-memory storage for registered webhooks
+let registeredWebhooks = [];
+
 // Middleware
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -71,6 +74,33 @@ app.get('/api/ping', async (req, res) => {
       message: 'Error sending ping',
       error: error.message
     });
+  }
+});
+
+// API endpoint to retrieve registered webhooks
+app.get('/registered-webhooks', (req, res) => {
+  res.json(registeredWebhooks);
+});
+
+// Update your registration route to store the webhook
+app.post('/api/register', async (req, res) => {
+  try {
+    // Your existing registration logic...
+    
+    // Store the registered webhook
+    const webhook = {
+      url: `${PUBLIC_URL}/webhook`,
+      events: ['*'],
+      description: 'Webhook integrator endpoint',
+      timestamp: new Date().toISOString()
+    };
+    
+    registeredWebhooks = [webhook]; // Replace any existing webhook
+    
+    res.json({ success: true, webhook });
+  } catch (error) {
+    console.error('Error registering webhook:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

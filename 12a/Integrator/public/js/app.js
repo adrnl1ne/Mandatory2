@@ -62,6 +62,9 @@ async function registerWebhook() {
     
     // Store registered webhook
     localStorage.setItem('registeredWebhook', JSON.stringify(webhookData));
+    
+    // Refresh registered webhooks after a delay
+    setTimeout(loadRegisteredWebhooks, 1000);
   } catch (error) {
     // Handle CORS and other errors
     statusElement.className = 'status';
@@ -105,11 +108,10 @@ async function sendPing() {
         <p>Check below for received webhooks in a few moments.</p>
       `;
       
-      // Check for webhooks after 2 seconds
-      setTimeout(loadReceivedWebhooks, 2000);
-      
-      // And check again after 5 seconds
-      setTimeout(loadReceivedWebhooks, 5000);
+      // Check for webhooks multiple times after ping
+      setTimeout(loadReceivedWebhooks, 1000);
+      setTimeout(loadReceivedWebhooks, 3000);
+      setTimeout(loadReceivedWebhooks, 6000);
     } else {
       throw new Error(data.message || 'Failed to send ping');
     }
@@ -133,8 +135,9 @@ async function sendPing() {
       `;
       
       // Try to load webhooks after some time
-      setTimeout(loadReceivedWebhooks, 3000);
-    }, 1500);
+      setTimeout(loadReceivedWebhooks, 2000);
+      setTimeout(loadReceivedWebhooks, 5000);
+    }, 1000);
   } finally {
     setTimeout(() => {
       pingBtn.disabled = false;
@@ -204,6 +207,39 @@ async function loadReceivedWebhooks() {
   }
 }
 
+// Load registered webhooks from the server
+async function loadRegisteredWebhooks() {
+  try {
+    const response = await fetch('/registered-webhooks');
+    
+    if (response.ok) {
+      const webhooks = await response.json();
+      
+      // If we got registered webhooks from the server, display them
+      if (webhooks && webhooks.length > 0) {
+        // Update the webhook details display
+        document.getElementById('webhookDetails').textContent = JSON.stringify(webhooks[0], null, 2);
+        document.getElementById('webhookInfo').classList.remove('hidden');
+        
+        // Store for later use
+        localStorage.setItem('registeredWebhook', JSON.stringify(webhooks[0]));
+      } else if (localStorage.getItem('registeredWebhook')) {
+        // Fall back to localStorage if available
+        document.getElementById('webhookDetails').textContent = localStorage.getItem('registeredWebhook');
+        document.getElementById('webhookInfo').classList.remove('hidden');
+      }
+    }
+  } catch (error) {
+    console.error('Error loading registered webhooks:', error);
+    
+    // Fall back to localStorage if available
+    if (localStorage.getItem('registeredWebhook')) {
+      document.getElementById('webhookDetails').textContent = localStorage.getItem('registeredWebhook');
+      document.getElementById('webhookInfo').classList.remove('hidden');
+    }
+  }
+}
+
 // Update UI with received webhooks
 function updateWebhooksUI() {
   const webhooksContainer = document.getElementById('receivedWebhooks');
@@ -247,18 +283,13 @@ function init() {
   document.getElementById('simulateBtn').addEventListener('click', addDemoWebhook);
   document.getElementById('clearBtn').addEventListener('click', clearWebhooks);
   
-  // Try to load any webhooks from the server
+  // Load webhooks data 
   loadReceivedWebhooks();
-  
-  // Display registered webhook if exists
-  const savedWebhook = localStorage.getItem('registeredWebhook');
-  if (savedWebhook) {
-    document.getElementById('webhookDetails').textContent = savedWebhook;
-    document.getElementById('webhookInfo').classList.remove('hidden');
-  }
+  loadRegisteredWebhooks();
   
   // Set up polling for webhook updates
   setInterval(loadReceivedWebhooks, 5000);
+  setInterval(loadRegisteredWebhooks, 30000); // Check registered webhooks less frequently
 }
 
 // Initialize when DOM is ready
