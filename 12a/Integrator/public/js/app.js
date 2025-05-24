@@ -51,7 +51,7 @@ async function registerWebhook() {
   }
 }
 
-// Improved ping function with server-side proxy
+// Improved ping function with iframe proxy
 async function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
@@ -67,9 +67,15 @@ async function sendPing() {
     iframeContainer.className = 'iframe-container';
     
     const proxyFrame = document.createElement('iframe');
-    proxyFrame.style.display = 'none';
+    proxyFrame.style.width = '100%';
+    proxyFrame.style.height = '150px';
+    proxyFrame.style.border = '1px solid #ddd';
+    proxyFrame.style.borderRadius = '4px';
     proxyFrame.name = 'pingProxy';
     iframeContainer.appendChild(proxyFrame);
+    
+    // Add the iframe to the status element
+    statusElement.appendChild(iframeContainer);
     
     // Create a form to submit through the iframe
     const form = document.createElement('form');
@@ -77,14 +83,10 @@ async function sendPing() {
     form.method = 'GET';
     form.action = '/api/ping-proxy';
     
-    // Add the form to the container
-    iframeContainer.appendChild(form);
-    
-    // Add the container to the page
-    document.body.appendChild(iframeContainer);
-    
-    // Submit the form
+    // Add the form to the page and submit it
+    document.body.appendChild(form);
     form.submit();
+    document.body.removeChild(form);
     
     // Setup message listener for communication from the iframe
     window.addEventListener('message', function pingHandler(event) {
@@ -101,21 +103,20 @@ async function sendPing() {
           // Refresh received webhooks after a delay
           setTimeout(loadReceivedWebhooks, 1000);
         } else {
-          statusElement.className = 'status error';
-          statusElement.innerHTML = `Error: ${event.data.error || 'Failed to send ping'}`;
+          if (event.data.isNgrok) {
+            statusElement.className = 'status';
+            statusElement.innerHTML = 'Ngrok warning page detected. Please use the link in the iframe to continue.';
+          } else {
+            statusElement.className = 'status error';
+            statusElement.innerHTML = `Error: ${event.data.error || 'Failed to send ping'}`;
+          }
         }
-        
-        // Clean up
-        setTimeout(() => {
-          document.body.removeChild(iframeContainer);
-        }, 1000);
       }
     });
     
     // Set a timeout to handle case where we don't get a response
     setTimeout(() => {
-      statusElement.innerHTML += '<br>Still waiting for ping response...';
-      statusElement.innerHTML += '<br>The first ping may require manual approval in the iframe.';
+      statusElement.innerHTML += '<br>If you see a Ngrok warning in the iframe, please click "Continue" to proceed.';
     }, 3000);
   } catch (error) {
     statusElement.className = 'status error';
