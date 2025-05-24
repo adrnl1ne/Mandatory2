@@ -25,6 +25,7 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: 14px;
+      margin-right: 10px;
     }
     button:hover {
       background-color: #45a049;
@@ -58,6 +59,13 @@
     h3 {
       margin-top: 0;
     }
+    .webhook-card {
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      border-left: 4px solid #4CAF50;
+    }
   </style>
 </head>
 <body>
@@ -90,232 +98,15 @@
   
   <div class="container">
     <h2>Received Webhooks</h2>
+    <p>For this demo, use these buttons to simulate receiving webhooks:</p>
+    <button id="simulateBtn">Add Demo Webhook</button>
+    <button id="clearBtn">Clear All</button>
     <p id="noWebhooks">No webhooks received yet.</p>
     <div id="receivedWebhooks"></div>
   </div>
   
-  <script>
-    // Configuration
-    const CONFIG = {
-      VERCEL_URL: "https://12aintegrator.vercel.app",
-      WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
-    };
-    
-    // Storage for webhooks using localStorage
-    function getStoredWebhooks() {
-      try {
-        const storedData = localStorage.getItem('receivedWebhooks');
-        return storedData ? JSON.parse(storedData) : [];
-      } catch (e) {
-        console.error('Error reading from localStorage:', e);
-        return [];
-      }
-    }
-    
-    function storeWebhooks(webhooks) {
-      try {
-        localStorage.setItem('receivedWebhooks', JSON.stringify(webhooks));
-      } catch (e) {
-        console.error('Error writing to localStorage:', e);
-      }
-    }
-    
-    // Get current webhooks
-    let receivedWebhooks = getStoredWebhooks();
-    
-    // Initialize the UI
-    function init() {
-      updateReceivedWebhooks();
-    }
-    
-    // Handle register button click
-    document.getElementById('registerBtn').addEventListener('click', async function() {
-      const registerBtn = document.getElementById('registerBtn');
-      const statusElement = document.getElementById('registerStatus');
-      
-      try {
-        registerBtn.disabled = true;
-        statusElement.className = 'status';
-        statusElement.innerHTML = 'Registering webhook...';
-        statusElement.classList.remove('hidden');
-        
-        // Create webhook registration data
-        const webhookData = {
-          url: `${CONFIG.VERCEL_URL}/webhook`,
-          events: ["*"],
-          description: "Webhook integrator endpoint"
-        };
-        
-        // Make direct request to webhook server
-        // Note: This might fail due to CORS, but we'll handle that gracefully
-        try {
-          const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(webhookData)
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            
-            statusElement.className = 'status success';
-            statusElement.innerHTML = 'Webhook registered successfully!';
-            
-            // Display webhook details
-            document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
-            document.getElementById('webhookInfo').classList.remove('hidden');
-            
-            // Save registered webhook
-            localStorage.setItem('registeredWebhook', JSON.stringify(webhookData));
-          } else {
-            throw new Error('Server returned error: ' + response.status);
-          }
-        } catch (fetchError) {
-          // Fallback for CORS issues - provide manual instructions
-          statusElement.className = 'status';
-          statusElement.innerHTML = `
-            <p>Direct registration not possible due to browser security (CORS).</p>
-            <p>Please register manually:</p>
-            <ol>
-              <li>Open <a href="${CONFIG.WEBHOOK_SERVER}" target="_blank">the webhook server</a></li>
-              <li>Click "Register a webhook"</li>
-              <li>Enter URL: <code>${CONFIG.VERCEL_URL}/webhook</code></li>
-              <li>Select all event types</li>
-              <li>Add a description</li>
-              <li>Click "Register"</li>
-            </ol>
-          `;
-          
-          // Still show the webhook details
-          document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
-          document.getElementById('webhookInfo').classList.remove('hidden');
-        }
-      } catch (error) {
-        statusElement.className = 'status error';
-        statusElement.innerHTML = `Error: ${error.message}`;
-      } finally {
-        registerBtn.disabled = false;
-      }
-    });
-    
-    // Handle ping button click
-    document.getElementById('pingBtn').addEventListener('click', function() {
-      const pingBtn = document.getElementById('pingBtn');
-      const statusElement = document.getElementById('pingStatus');
-      
-      try {
-        pingBtn.disabled = true;
-        statusElement.className = 'status';
-        statusElement.innerHTML = '';
-        statusElement.classList.remove('hidden');
-        
-        // Open the ping URL directly in a new tab
-        window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
-        
-        // Show success message
-        statusElement.className = 'status success';
-        statusElement.innerHTML = `
-          <p>Ping request opened in new browser tab.</p>
-          <p>After completing any ngrok verification steps, check below for received webhooks.</p>
-          <button id="addTestWebhook" style="margin-top: 10px;">Add Test Webhook</button>
-        `;
-        
-        // Add event listener to the test button
-        setTimeout(() => {
-          const testButton = document.getElementById('addTestWebhook');
-          if (testButton) {
-            testButton.addEventListener('click', addTestWebhook);
-          }
-        }, 10);
-      } catch (error) {
-        statusElement.className = 'status error';
-        statusElement.innerHTML = `Error: ${error.message}`;
-      } finally {
-        setTimeout(() => {
-          pingBtn.disabled = false;
-        }, 1000);
-      }
-    });
-    
-    // Add a test webhook
-    function addTestWebhook() {
-      const webhook = {
-        timestamp: new Date().toISOString(),
-        data: {
-          event: "ping_response",
-          message: "This is a simulated webhook response",
-          sent_at: new Date().toISOString(),
-          source: "webhook_server"
-        }
-      };
-      
-      // Add to beginning of array
-      receivedWebhooks.unshift(webhook);
-      
-      // Limit array size
-      if (receivedWebhooks.length > 5) {
-        receivedWebhooks = receivedWebhooks.slice(0, 5);
-      }
-      
-      // Store and update UI
-      storeWebhooks(receivedWebhooks);
-      updateReceivedWebhooks();
-    }
-    
-    // Update the UI with received webhooks
-    function updateReceivedWebhooks() {
-      const webhooksContainer = document.getElementById('receivedWebhooks');
-      const noWebhooksElement = document.getElementById('noWebhooks');
-      
-      if (receivedWebhooks && receivedWebhooks.length > 0) {
-        noWebhooksElement.classList.add('hidden');
-        webhooksContainer.innerHTML = '';
-        
-        receivedWebhooks.forEach((webhook, index) => {
-          const webhookElement = document.createElement('div');
-          webhookElement.className = 'status';
-          webhookElement.style.marginBottom = '10px';
-          
-          const timeReceived = new Date(webhook.timestamp || Date.now()).toLocaleString();
-          webhookElement.innerHTML = `
-            <h4>Webhook #${index + 1} - ${timeReceived}</h4>
-            <pre>${JSON.stringify(webhook.data || webhook, null, 2)}</pre>
-          `;
-          
-          webhooksContainer.appendChild(webhookElement);
-        });
-      } else {
-        noWebhooksElement.classList.remove('hidden');
-        webhooksContainer.innerHTML = '';
-      }
-    }
-    
-    // Create a webhook endpoint at page load
-    function setupWebhookEndpoint() {
-      // Since we can't create a true endpoint, let's simulate it
-      // Display the registered webhook if it exists
-      const savedWebhook = localStorage.getItem('registeredWebhook');
-      
-      if (savedWebhook) {
-        document.getElementById('webhookDetails').textContent = savedWebhook;
-        document.getElementById('webhookInfo').classList.remove('hidden');
-      }
-    }
-    
-    // Initialize
-    window.addEventListener('DOMContentLoaded', function() {
-      init();
-      setupWebhookEndpoint();
-    });
-    
-    // Keyboard shortcuts - Press T to add test webhook
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 't' || e.key === 'T') {
-        addTestWebhook();
-      }
-    });
-  </script>
+  <!-- Include config and app scripts -->
+  <script src="/js/config.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>

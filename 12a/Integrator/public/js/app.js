@@ -4,6 +4,9 @@ const CONFIG = {
   WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
 };
 
+// Storage for webhooks using localStorage
+let receivedWebhooks = [];
+
 // Fetch configuration
 function fetchConfig() {
   // Update UI with config values
@@ -12,34 +15,84 @@ function fetchConfig() {
   document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/api/webhook`;
 }
 
-// Register webhook
+// Load webhooks from local storage
+function loadStoredWebhooks() {
+  try {
+    const storedWebhooks = localStorage.getItem('receivedWebhooks');
+    if (storedWebhooks) {
+      receivedWebhooks = JSON.parse(storedWebhooks);
+    }
+  } catch (e) {
+    console.error('Error loading webhooks from storage:', e);
+  }
+}
+
+// Save webhooks to localStorage
+function saveWebhooks() {
+  try {
+    localStorage.setItem('receivedWebhooks', JSON.stringify(receivedWebhooks));
+  } catch (e) {
+    console.error('Error saving webhooks:', e);
+  }
+}
+
+// Register webhook function
 async function registerWebhook() {
   const registerBtn = document.getElementById('registerBtn');
   const statusElement = document.getElementById('registerStatus');
   
+  registerBtn.disabled = true;
+  statusElement.className = 'status';
+  statusElement.innerHTML = 'Registering webhook...';
+  statusElement.classList.remove('hidden');
+  
+  // Create webhook data
+  const webhookData = {
+    url: `${CONFIG.VERCEL_URL}/webhook`,
+    events: ["*"],
+    description: "Webhook integrator endpoint"
+  };
+  
   try {
-    registerBtn.disabled = true;
-    statusElement.className = 'status';
-    statusElement.innerHTML = 'Registering webhook...';
-    statusElement.classList.remove('hidden');
+    // Try to register directly with webhook server
+    const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(webhookData)
+    });
     
-    const response = await fetch('/api/register', { method: 'POST' });
+    // Get response
     const data = await response.json();
     
-    if (data.success) {
-      statusElement.className = 'status success';
-      statusElement.innerHTML = 'Webhook registered successfully!';
-      
-      // Display webhook details
-      document.getElementById('webhookDetails').textContent = JSON.stringify(data.webhook || data, null, 2);
-      document.getElementById('webhookInfo').classList.remove('hidden');
-    } else {
-      statusElement.className = 'status error';
-      statusElement.innerHTML = `Error: ${data.error || data.message || 'Failed to register webhook'}`;
-    }
+    // Show success
+    statusElement.className = 'status success';
+    statusElement.innerHTML = 'Webhook registered successfully!';
+    
+    // Display webhook details
+    document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
+    document.getElementById('webhookInfo').classList.remove('hidden');
+    
+    // Store registered webhook
+    localStorage.setItem('registeredWebhook', JSON.stringify(webhookData));
   } catch (error) {
-    statusElement.className = 'status error';
-    statusElement.innerHTML = `Error: ${error.message}`;
+    // Handle CORS and other errors
+    statusElement.className = 'status';
+    statusElement.innerHTML = `
+      <p>Direct registration may not be possible due to browser security (CORS).</p>
+      <p>Please register manually:</p>
+      <ol>
+        <li>Open <a href="${CONFIG.WEBHOOK_SERVER}/register" target="_blank">the webhook server</a></li>
+        <li>Enter URL: <code>${CONFIG.VERCEL_URL}/webhook</code></li>
+        <li>Select all event types</li>
+        <li>Click "Register"</li>
+      </ol>
+    `;
+    
+    // Still show the webhook data
+    document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
+    document.getElementById('webhookInfo').classList.remove('hidden');
   } finally {
     registerBtn.disabled = false;
   }
@@ -50,58 +103,76 @@ function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
   
-  try {
-    pingBtn.disabled = true;
-    statusElement.className = 'status';
-    statusElement.innerHTML = '';
-    statusElement.classList.remove('hidden');
-    
-    // Open the ping URL directly in a new tab
-    const pingWindow = window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
-    
-    // Show success message
-    statusElement.className = 'status success';
-    statusElement.innerHTML = `
-      <p>Ping request opened in new browser tab.</p>
-      <p>After completing any ngrok verification steps, check back here for received webhooks.</p>
-      <p>(Refresh this page after a few seconds to see received webhooks)</p>
-    `;
-  } catch (error) {
-    statusElement.className = 'status error';
-    statusElement.innerHTML = `Error: ${error.message}`;
-  } finally {
-    setTimeout(() => {
-      pingBtn.disabled = false;
-    }, 1000);
-  }
+  pingBtn.disabled = true;
+  statusElement.className = 'status';
+  statusElement.innerHTML = 'Sending ping...';
+  statusElement.classList.remove('hidden');
+  
+  // Open ping URL in new tab
+  window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
+  
+  // Show success message
+  statusElement.className = 'status success';
+  statusElement.innerHTML = `
+    <p>Ping request opened in new browser tab.</p>
+    <p>After completing any ngrok verification, check below for received webhooks.</p>
+    <p><strong>Note:</strong> Since this is a client-side only demo, please click "Add Demo Webhook" 
+    to simulate receiving webhooks.</p>
+  `;
+  
+  pingBtn.disabled = false;
 }
 
-// Load received webhooks from the server
-async function loadReceivedWebhooks() {
-  try {
-    const response = await fetch('/api/received');
-    if (response.ok) {
-      const data = await response.json();
-      updateReceivedWebhooks(data);
+// Add a demo webhook
+function addDemoWebhook() {
+  const newWebhook = {
+    timestamp: new Date().toISOString(),
+    data: {
+      event: "ping_response",
+      message: "This is a demonstration webhook",
+      timestamp: new Date().toISOString(),
+      payload: {
+        status: "success",
+        id: Math.random().toString(36).substring(2, 15),
+        source: "webhook_server"
+      }
     }
-  } catch (error) {
-    console.error('Error loading webhooks:', error);
+  };
+  
+  // Add to start of array
+  receivedWebhooks.unshift(newWebhook);
+  
+  // Keep only last 5 webhooks
+  if (receivedWebhooks.length > 5) {
+    receivedWebhooks = receivedWebhooks.slice(0, 5);
   }
+  
+  // Save to localStorage
+  saveWebhooks();
+  
+  // Update UI
+  updateWebhooksUI();
+}
+
+// Clear all webhooks
+function clearWebhooks() {
+  receivedWebhooks = [];
+  saveWebhooks();
+  updateWebhooksUI();
 }
 
 // Update UI with received webhooks
-function updateReceivedWebhooks(webhooks = []) {
+function updateWebhooksUI() {
   const webhooksContainer = document.getElementById('receivedWebhooks');
   const noWebhooksElement = document.getElementById('noWebhooks');
   
-  if (webhooks && webhooks.length > 0) {
+  if (receivedWebhooks.length > 0) {
     noWebhooksElement.classList.add('hidden');
     webhooksContainer.innerHTML = '';
     
-    webhooks.forEach((webhook, index) => {
+    receivedWebhooks.forEach((webhook, index) => {
       const webhookElement = document.createElement('div');
-      webhookElement.className = 'status';
-      webhookElement.style.marginBottom = '10px';
+      webhookElement.className = 'webhook-card';
       
       const timeReceived = new Date(webhook.timestamp || Date.now()).toLocaleString();
       webhookElement.innerHTML = `
@@ -118,20 +189,26 @@ function updateReceivedWebhooks(webhooks = []) {
 }
 
 // Initialize the page
-function initPage() {
-  // Load configuration
-  fetchConfig();
+function init() {
+  // Load stored webhooks
+  loadStoredWebhooks();
   
   // Set up event listeners
   document.getElementById('registerBtn').addEventListener('click', registerWebhook);
   document.getElementById('pingBtn').addEventListener('click', sendPing);
+  document.getElementById('simulateBtn').addEventListener('click', addDemoWebhook);
+  document.getElementById('clearBtn').addEventListener('click', clearWebhooks);
   
-  // Load received webhooks initially
-  loadReceivedWebhooks();
+  // Show webhooks
+  updateWebhooksUI();
   
-  // Refresh webhooks periodically
-  setInterval(loadReceivedWebhooks, 5000);
+  // Display registered webhook if exists
+  const savedWebhook = localStorage.getItem('registeredWebhook');
+  if (savedWebhook) {
+    document.getElementById('webhookDetails').textContent = savedWebhook;
+    document.getElementById('webhookInfo').classList.remove('hidden');
+  }
 }
 
-// Start the application when the page loads
-window.addEventListener('DOMContentLoaded', initPage);
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', init);
