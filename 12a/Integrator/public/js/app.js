@@ -7,14 +7,6 @@ const CONFIG = {
 // Storage for webhooks using localStorage
 let receivedWebhooks = [];
 
-// Fetch configuration
-function fetchConfig() {
-  // Update UI with config values
-  document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
-  document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
-  document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/api/webhook`;
-}
-
 // Load webhooks from local storage
 function loadStoredWebhooks() {
   try {
@@ -98,7 +90,7 @@ async function registerWebhook() {
   }
 }
 
-// Simple ping function - direct browser approach
+// Send ping function
 function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
@@ -192,6 +184,11 @@ function updateWebhooksUI() {
 function init() {
   // Load stored webhooks
   loadStoredWebhooks();
+  
+  // Update UI with config values
+  document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
+  document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
+  document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
   
   // Set up event listeners
   document.getElementById('registerBtn').addEventListener('click', registerWebhook);

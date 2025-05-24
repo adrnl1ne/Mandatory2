@@ -2,22 +2,10 @@
   "name": "webhook-integrator",
   "version": "1.0.0",
   "description": "Webhook integrator for SI Mandatory 2",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
-  "dependencies": {
-    "axios": "^0.27.2",
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2"
+    "start": "serve public"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
-  },
-  "engines": {
-    "node": "18.x"
+    "serve": "^14.2.0"
   }
 }
