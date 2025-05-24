@@ -1,6 +1,6 @@
 // Configuration for the webhook integrator
 const CONFIG = {
-  // The ngrok URL of the webhook system
+  // The webhook server URL
   WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app",
   
   // Your Vercel URL where the integrator is deployed
