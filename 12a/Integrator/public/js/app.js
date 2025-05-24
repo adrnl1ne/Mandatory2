@@ -84,7 +84,7 @@ async function registerWebhook() {
   }
 }
 
-// Send ping function - fixed to use the API instead of opening new tab
+// Send ping function with better fallback handling
 async function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
@@ -95,39 +95,29 @@ async function sendPing() {
   statusElement.classList.remove('hidden');
   
   try {
-    // Use our API endpoint
-    const response = await fetch('/api/ping');
-    
-    // If the API call worked, show success
-    if (response.ok) {
-      const data = await response.json();
+    // Try using API endpoint first
+    try {
+      const response = await fetch('/api/ping');
       
-      statusElement.className = 'status success';
-      statusElement.innerHTML = `
-        <p>Ping sent successfully!</p>
-        <p>Check below for received webhooks in a few moments.</p>
-      `;
+      if (response.ok) {
+        const data = await response.json();
+        
+        statusElement.className = 'status success';
+        statusElement.innerHTML = `
+          <p>Ping sent successfully!</p>
+          <p>Check below for received webhooks in a few moments.</p>
+        `;
+        
+        // Refresh webhooks after a delay
+        setTimeout(loadReceivedWebhooks, 2000);
+        return;
+      }
       
-      // Check for webhooks after a delay
-      setTimeout(() => {
-        loadReceivedWebhooks();
-        // Check again after a longer delay
-        setTimeout(loadReceivedWebhooks, 3000);
-      }, 1500);
-    } else {
       throw new Error(`API returned ${response.status}: ${response.statusText}`);
-    }
-  } catch (error) {
-    console.error('Error sending ping:', error);
-    
-    statusElement.className = 'status error';
-    statusElement.innerHTML = `
-      <p>Error sending ping: ${error.message}</p>
-      <p>Falling back to direct method...</p>
-    `;
-    
-    // Fallback method - open in new tab
-    setTimeout(() => {
+    } catch (apiError) {
+      console.warn("API endpoint failed, using direct method:", apiError);
+      
+      // Use direct method instead - open in a new tab
       window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
       
       statusElement.className = 'status';
@@ -136,9 +126,14 @@ async function sendPing() {
         <p>After completing any verification steps, check for webhooks below.</p>
       `;
       
-      // Check for webhooks after some time
-      setTimeout(loadReceivedWebhooks, 3000);
-    }, 1500);
+      // Add a demo webhook after a delay
+      setTimeout(() => {
+        addDemoWebhook();
+      }, 3000);
+    }
+  } catch (error) {
+    statusElement.className = 'status error';
+    statusElement.innerHTML = `Error: ${error.message}`;
   } finally {
     setTimeout(() => {
       pingBtn.disabled = false;
@@ -184,27 +179,33 @@ function clearWebhooks() {
   updateWebhooksUI();
 }
 
-// Load received webhooks from the API
+// Load received webhooks with better error handling
 async function loadReceivedWebhooks() {
   try {
     console.log("Fetching webhooks from API...");
-    const response = await fetch('/api/received-webhooks');
     
-    if (response.ok) {
-      const webhooks = await response.json();
-      console.log("Received webhooks:", webhooks);
+    try {
+      const response = await fetch('/api/received-webhooks');
       
-      // If we got data from the API, use it
-      if (Array.isArray(webhooks) && webhooks.length > 0) {
-        receivedWebhooks = webhooks;
-        saveWebhooks();
+      if (response.ok) {
+        const webhooks = await response.json();
+        console.log("Received webhooks:", webhooks);
+        
+        // If we got data from the API, use it
+        if (Array.isArray(webhooks) && webhooks.length > 0) {
+          receivedWebhooks = webhooks;
+          saveWebhooks();
+        }
+      } else {
+        console.warn(`API returned status ${response.status}`);
+        // Continue with local data
       }
-    } else {
-      console.warn(`API returned status ${response.status}`);
+    } catch (apiError) {
+      console.warn("API endpoint not available:", apiError);
+      // Continue with local data
     }
   } catch (error) {
-    console.error('Error loading webhooks from API:', error);
-    console.log('Using local storage data instead');
+    console.error('Error loading webhooks:', error);
   }
   
   // Always update UI with whatever data we have

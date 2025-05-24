@@ -1,6 +1,6 @@
 // In-memory storage for received webhooks
 // Note: This will reset when the function goes cold
-let receivedWebhooks = [];
+const receivedWebhooks = [];
 
 module.exports = (req, res) => {
   // Set CORS headers
@@ -11,11 +11,6 @@ module.exports = (req, res) => {
   // Handle OPTIONS requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
-  }
-
-  // Initialize global storage if it doesn't exist
-  if (typeof global.receivedWebhooks === 'undefined') {
-    global.receivedWebhooks = [];
   }
   
   // Handle POST requests (store new webhook)
@@ -29,17 +24,17 @@ module.exports = (req, res) => {
       }
       
       // Add to the beginning of the array
-      global.receivedWebhooks.unshift(webhook);
+      receivedWebhooks.unshift(webhook);
       
       // Keep only the most recent 5 webhooks
-      if (global.receivedWebhooks.length > 5) {
-        global.receivedWebhooks = global.receivedWebhooks.slice(0, 5);
+      if (receivedWebhooks.length > 5) {
+        receivedWebhooks.splice(5);
       }
       
       return res.status(200).json({ 
         success: true, 
         message: 'Webhook stored',
-        webhooks: global.receivedWebhooks 
+        webhooks: receivedWebhooks 
       });
     } catch (error) {
       console.error('Error storing webhook:', error);
@@ -50,8 +45,8 @@ module.exports = (req, res) => {
   // Handle GET requests (retrieve webhooks)
   if (req.method === 'GET') {
     // If we have stored webhooks, return them
-    if (global.receivedWebhooks && global.receivedWebhooks.length > 0) {
-      return res.status(200).json(global.receivedWebhooks);
+    if (receivedWebhooks.length > 0) {
+      return res.status(200).json(receivedWebhooks);
     } 
     
     // Otherwise return a sample webhook

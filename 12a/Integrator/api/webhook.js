@@ -27,29 +27,6 @@ module.exports = async (req, res) => {
       data: req.body
     };
     
-    // Store the webhook in global.receivedWebhooks
-    if (typeof global.receivedWebhooks === 'undefined') {
-      global.receivedWebhooks = [];
-    }
-    
-    global.receivedWebhooks.unshift(webhookData);
-    if (global.receivedWebhooks.length > 5) {
-      global.receivedWebhooks = global.receivedWebhooks.slice(0, 5);
-    }
-    
-    // Try to forward the webhook to the received-webhooks endpoint
-    // This is an optional step that might help with persistence between invocations
-    try {
-      const baseUrl = process.env.VERCEL_URL ? 
-        `https://${process.env.VERCEL_URL}` : 
-        'http://localhost:3000';
-        
-      await axios.post(`${baseUrl}/api/received-webhooks`, webhookData);
-    } catch (forwardError) {
-      console.error('Error forwarding webhook:', forwardError);
-      // Continue even if forwarding fails
-    }
-    
     // Return a success response
     return res.status(200).json({ 
       success: true, 

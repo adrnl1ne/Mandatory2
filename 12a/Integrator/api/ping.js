@@ -1,6 +1,7 @@
 // Direct ping endpoint that doesn't redirect
 const axios = require('axios');
 
+// Export a function that handles the request
 module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,7 +18,7 @@ module.exports = async (req, res) => {
     const WEBHOOK_SERVER = 'https://8636-91-101-72-250.ngrok-free.app';
     
     // Send the ping request to the webhook server
-    const response = await axios.get(`${WEBHOOK_SERVER}/ping`, {
+    const response = await axios.get(`${WEBHOOK_SERVER}/ping?from=vercel&t=${Date.now()}`, {
       timeout: 10000 // 10 second timeout
     });
     
