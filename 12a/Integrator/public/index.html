@@ -10,32 +10,21 @@
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
-      line-height: 1.6;
     }
     .container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .card {
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin: 20px 0;
+      margin-bottom: 20px;
     }
     button {
-      padding: 10px 15px;
       background-color: #4CAF50;
       color: white;
+      padding: 10px 15px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
     }
     button:hover {
       background-color: #45a049;
@@ -73,220 +62,39 @@
 </head>
 <body>
   <h1>Webhook Integrator</h1>
-  <p>This application integrates with the webhook system at <a href="#" id="webhookServerUrl" target="_blank"></a></p>
   
   <div class="container">
-    <div class="card">
-      <h3>Webhook Registration</h3>
-      <p>Current webhook endpoint: <code id="publicUrl"></code></p>
-      <div class="button-group">
-        <button id="registerBtn">Register Webhook</button>
-      </div>
-      <div id="registerStatus" class="status hidden"></div>
-      <div id="webhookInfo" class="hidden">
-        <h4>Registered Webhook Details:</h4>
-        <pre id="webhookDetails"></pre>
-      </div>
-    </div>
+    <h2>Configuration</h2>
+    <p>Webhook Server: <a id="webhookServerUrl" href="#" target="_blank">Loading...</a></p>
+    <p>Public URL (for webhook reception): <span id="publicUrl">Loading...</span></p>
+  </div>
+  
+  <div class="container">
+    <h2>Register Webhook</h2>
+    <p>Register your webhook with the webhook server:</p>
+    <button id="registerBtn">Register Webhook</button>
+    <div id="registerStatus" class="hidden"></div>
     
-    <div class="card">
-      <h3>Test Webhook</h3>
-      <p>Send a ping to test all registered webhooks:</p>
-      <div class="button-group">
-        <button id="pingBtn">Send Ping</button>
-      </div>
-      <div id="pingStatus" class="status hidden"></div>
-    </div>
-    
-    <div class="card">
-      <h3>Received Webhooks</h3>
-      <p>The most recent webhooks received:</p>
-      <div id="noWebhooks">No webhooks received yet.</div>
-      <div id="receivedWebhooks"></div>
+    <div id="webhookInfo" class="hidden">
+      <h3>Webhook Details</h3>
+      <pre id="webhookDetails"></pre>
     </div>
   </div>
   
-  <!-- Replace external config file with inline configuration -->
-  <script>
-    // Inline configuration for remote services
-    const CONFIG = {
-      // Your actual Vercel URL where the integrator is deployed
-      VERCEL_URL: "https://12aintegrator.vercel.app",
-      
-      // The ngrok URL of the webhook system
-      WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
-    };
-
-    // Fetch configuration from the server with error handling
-    async function fetchConfig() {
-      try {
-        // Direct connection to webhook system instead of through Vercel API
-        document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
-        document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
-        document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
-      } catch (error) {
-        console.error('Error setting up configuration:', error);
-      }
-    }
-
-    // Register webhook directly with the webhook system
-    async function registerWebhook() {
-      const registerBtn = document.getElementById('registerBtn');
-      const statusElement = document.getElementById('registerStatus');
-      
-      try {
-        registerBtn.disabled = true;
-        statusElement.className = 'status';
-        statusElement.innerHTML = 'Registering webhook...';
-        statusElement.classList.remove('hidden');
-        
-        console.log("Registering webhook with server:", CONFIG.WEBHOOK_SERVER);
-        // Direct connection to webhook system
-        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, { 
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            url: `${CONFIG.VERCEL_URL}/webhook`,
-            events: ["*"], // Request all events
-            description: 'Webhook integrator endpoint'
-          })
-        });
-        console.log("Webhook registration response:", response);
-        const data = await response.json();
-        
-        if (response.ok) {
-          statusElement.className = 'status success';
-          statusElement.innerHTML = 'Webhook registered successfully!';
-          
-          // Display webhook details
-          document.getElementById('webhookDetails').textContent = JSON.stringify(data, null, 2);
-          document.getElementById('webhookInfo').classList.remove('hidden');
-        } else {
-          statusElement.className = 'status error';
-          statusElement.innerHTML = `Error: ${data.error || 'Failed to register webhook'}`;
-        }
-      } catch (error) {
-        statusElement.className = 'status error';
-        statusElement.innerHTML = `Error: ${error.message}`;
-      } finally {
-        registerBtn.disabled = false;
-      }
-    }
-    
-    // Send a ping using direct link
-    function sendPing() {
-      const pingBtn = document.getElementById('pingBtn');
-      const statusElement = document.getElementById('pingStatus');
-      
-      // Create a clear visual link to the ping endpoint
-      pingBtn.disabled = true;
-      statusElement.className = 'status';
-      
-      // Create a simple form that will work across the Ngrok boundary
-      const form = document.createElement('form');
-      form.method = 'GET';
-      form.action = 'https://8636-91-101-72-250.ngrok-free.app/ping';
-      form.target = 'pingResult';
-      form.style.display = 'inline'; 
-      
-      // Create submit button that looks like our normal buttons
-      const submitBtn = document.createElement('button');
-      submitBtn.type = 'submit';
-      submitBtn.textContent = 'Click to Send Ping';
-      submitBtn.style.backgroundColor = '#4CAF50';
-      
-      // Create hidden iframe to capture result
-      const iframe = document.createElement('iframe');
-      iframe.name = 'pingResult';
-      iframe.style.width = '100%';
-      iframe.style.height = '100px';
-      iframe.style.border = '1px solid #ddd';
-      iframe.style.borderRadius = '4px';
-      iframe.style.marginTop = '10px';
-      
-      // Add instruction text
-      statusElement.innerHTML = '';
-      
-      const instruction = document.createElement('p');
-      instruction.textContent = 'Click the button below to send the ping:';
-      statusElement.appendChild(instruction);
-      
-      // Add form and submit button
-      form.appendChild(submitBtn);
-      statusElement.appendChild(form);
-      statusElement.appendChild(document.createElement('br'));
-      
-      // Add note about iframe
-      const note = document.createElement('p');
-      note.textContent = 'The ping result will appear below:';
-      statusElement.appendChild(note);
-      
-      // Add iframe to see result
-      statusElement.appendChild(iframe);
-      
-      // Re-enable original button
-      pingBtn.disabled = false;
-    }
-    
-    // Function to handle received webhooks display
-    function updateReceivedWebhooks(webhooks = []) {
-      const webhooksContainer = document.getElementById('receivedWebhooks');
-      const noWebhooksElement = document.getElementById('noWebhooks');
-      
-      if (webhooks && webhooks.length > 0) {
-        noWebhooksElement.classList.add('hidden');
-        webhooksContainer.innerHTML = '';
-        
-        webhooks.forEach((webhook, index) => {
-          const webhookElement = document.createElement('div');
-          webhookElement.className = 'status';
-          webhookElement.style.marginBottom = '10px';
-          
-          const timeReceived = new Date(webhook.timestamp || Date.now()).toLocaleString();
-          webhookElement.innerHTML = `
-            <h4>Webhook #${index + 1} - ${timeReceived}</h4>
-            <pre>${JSON.stringify(webhook.data || webhook, null, 2)}</pre>
-          `;
-          
-          webhooksContainer.appendChild(webhookElement);
-        });
-      } else {
-        noWebhooksElement.classList.remove('hidden');
-        webhooksContainer.innerHTML = '';
-      }
-    }
-    
-    // Mock function since Vercel API is not working
-    async function loadReceivedWebhooks() {
-      try {
-        // For now, we'll just show a message that we can't load webhooks
-        console.log("Note: Can't load webhooks from Vercel API - endpoint not working.");
-        
-        // Keep the UI showing no webhooks
-        const noWebhooksElement = document.getElementById('noWebhooks');
-        noWebhooksElement.textContent = "Can't load webhooks from the server. Try sending a ping to create new webhooks.";
-      } catch (error) {
-        console.error('Error handling webhooks display:', error);
-      }
-    }
-    
-    // Initialize the page
-    function initPage() {
-      // Load configuration
-      fetchConfig();
-      
-      // Set up event listeners
-      document.getElementById('registerBtn').addEventListener('click', registerWebhook);
-      document.getElementById('pingBtn').addEventListener('click', sendPing);
-      
-      // Initial UI setup
-      loadReceivedWebhooks();
-    }
-    
-    // Start the application when the page loads
-    window.addEventListener('DOMContentLoaded', initPage);
-  </script>
+  <div class="container">
+    <h2>Test Webhook</h2>
+    <p>Send a ping to test all registered webhooks:</p>
+    <button id="pingBtn">Send Ping</button>
+    <div id="pingStatus" class="hidden"></div>
+  </div>
+  
+  <div class="container">
+    <h2>Received Webhooks</h2>
+    <p id="noWebhooks">No webhooks received yet.</p>
+    <div id="receivedWebhooks"></div>
+  </div>
+  
+  <!-- Include external JavaScript -->
+  <script src="js/app.js"></script>
 </body>
 </html>
