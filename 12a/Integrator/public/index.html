@@ -188,7 +188,7 @@
         console.log("Sending ping to server:", CONFIG.WEBHOOK_SERVER + '/ping');
         // Use your API endpoint instead of direct connection
         const response = await fetch('/ping', {
-          method: 'POST'
+          method: 'GET'
         });
         
         const data = await response.json();
