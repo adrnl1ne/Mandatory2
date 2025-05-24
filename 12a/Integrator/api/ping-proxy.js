@@ -1,58 +1,56 @@
-// Use chrome-aws-lambda and puppeteer-core for Vercel compatibility
-const chrome = require('chrome-aws-lambda');
-const puppeteer = require('puppeteer-core');
+// Simple ping proxy without complex dependencies
 const axios = require('axios');
 
 module.exports = async (req, res) => {
-  // Enable CORS
+  // Set appropriate headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'text/html');
   
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
   
-  // Set content type to HTML
-  res.setHeader('Content-Type', 'text/html');
-  
   // Get webhook server URL
   const WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
   
-  // Return a page with a direct link to the ping endpoint
-  res.status(200).send(`
+  // Return a simple HTML page with a link to the webhook server
+  return res.status(200).send(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Ping Webhook</title>
+      <title>Webhook Ping</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
-        .button { display: inline-block; padding: 10px 15px; background-color: #4CAF50; color: white; 
-                 text-decoration: none; border-radius: 4px; }
-      </style>
-      <script>
-        function notifyParent(success, message) {
-          window.parent.postMessage({
-            type: 'ping-result',
-            success: success,
-            message: message
-          }, '*');
+        .button { 
+          display: inline-block; 
+          padding: 10px 15px; 
+          background-color: #4CAF50; 
+          color: white; 
+          text-decoration: none; 
+          border-radius: 4px; 
+          margin-bottom: 20px;
         }
-      </script>
+      </style>
     </head>
     <body>
-      <h3>Webhook Ping</h3>
-      <p>Click the button below to send a ping to all registered webhooks:</p>
-      <p>
-        <a href="${WEBHOOK_SERVER}/ping?testPayload=FromIntegrator_${Date.now()}" 
-           target="_blank" 
-           class="button" 
-           onclick="notifyParent(true, 'Ping request opened in new tab')">
-           Send Ping
-        </a>
-      </p>
-      <p>After clicking, check back for received webhooks.</p>
+      <h3>Send Webhook Ping</h3>
+      <p>Click the button below to send a ping to the webhook server:</p>
+      <a href="${WEBHOOK_SERVER}/ping?testPayload=FromIntegrator_${Date.now()}" 
+         target="_blank" class="button">Send Ping</a>
+      
+      <p><strong>Note:</strong> After clicking the button, a new tab will open. 
+      If you see a "Continue to site" message from ngrok, please click it to proceed.</p>
+      
+      <p>After sending the ping, close this dialog and check for received webhooks on the main page.</p>
+      
+      <script>
+        // Let the parent window know the iframe loaded successfully
+        window.parent.postMessage({
+          type: 'ping-iframe-ready'
+        }, '*');
+      </script>
     </body>
     </html>
   `);

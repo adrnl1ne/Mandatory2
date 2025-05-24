@@ -51,7 +51,7 @@ async function registerWebhook() {
   }
 }
 
-// Improved ping function with iframe proxy
+// Simplified ping function that uses the iframe approach
 async function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
@@ -59,65 +59,29 @@ async function sendPing() {
   try {
     pingBtn.disabled = true;
     statusElement.className = 'status';
-    statusElement.innerHTML = 'Sending ping...';
+    statusElement.innerHTML = 'Loading ping interface...';
     statusElement.classList.remove('hidden');
     
-    // Create ping proxy iframe
-    const iframeContainer = document.createElement('div');
-    iframeContainer.className = 'iframe-container';
+    // Create and show iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = '/api/ping-proxy';
+    iframe.style.width = '100%';
+    iframe.style.height = '250px';
+    iframe.style.border = '1px solid #ddd';
+    iframe.style.borderRadius = '4px';
     
-    const proxyFrame = document.createElement('iframe');
-    proxyFrame.style.width = '100%';
-    proxyFrame.style.height = '150px';
-    proxyFrame.style.border = '1px solid #ddd';
-    proxyFrame.style.borderRadius = '4px';
-    proxyFrame.name = 'pingProxy';
-    iframeContainer.appendChild(proxyFrame);
+    // Clear previous content and add iframe
+    statusElement.innerHTML = '';
+    statusElement.appendChild(iframe);
     
-    // Add the iframe to the status element
-    statusElement.appendChild(iframeContainer);
-    
-    // Create a form to submit through the iframe
-    const form = document.createElement('form');
-    form.target = 'pingProxy';
-    form.method = 'GET';
-    form.action = '/api/ping-proxy';
-    
-    // Add the form to the page and submit it
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-    
-    // Setup message listener for communication from the iframe
-    window.addEventListener('message', function pingHandler(event) {
-      // Only handle messages from our proxy
-      if (event.data && event.data.type === 'ping-result') {
-        // Remove the event listener to avoid memory leaks
-        window.removeEventListener('message', pingHandler);
-        
-        // Process the result
-        if (event.data.success) {
-          statusElement.className = 'status success';
-          statusElement.innerHTML = 'Ping sent successfully!';
-          
-          // Refresh received webhooks after a delay
-          setTimeout(loadReceivedWebhooks, 1000);
-        } else {
-          if (event.data.isNgrok) {
-            statusElement.className = 'status';
-            statusElement.innerHTML = 'Ngrok warning page detected. Please use the link in the iframe to continue.';
-          } else {
-            statusElement.className = 'status error';
-            statusElement.innerHTML = `Error: ${event.data.error || 'Failed to send ping'}`;
-          }
-        }
+    // Listen for messages from iframe
+    window.addEventListener('message', function pingIframeHandler(event) {
+      if (event.data && event.data.type === 'ping-iframe-ready') {
+        // Iframe loaded successfully
+        console.log('Ping iframe loaded');
       }
     });
     
-    // Set a timeout to handle case where we don't get a response
-    setTimeout(() => {
-      statusElement.innerHTML += '<br>If you see a Ngrok warning in the iframe, please click "Continue" to proceed.';
-    }, 3000);
   } catch (error) {
     statusElement.className = 'status error';
     statusElement.innerHTML = `Error: ${error.message}`;
