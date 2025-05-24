@@ -5,14 +5,10 @@ const CONFIG = {
 };
 
 // Fetch configuration from the server
-async function fetchConfig() {
-  try {
-    document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
-    document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
-    document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
-  } catch (error) {
-    console.error('Error setting up configuration:', error);
-  }
+function fetchConfig() {
+  document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
+  document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
+  document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
 }
 
 // Register webhook with the server
@@ -51,51 +47,36 @@ async function registerWebhook() {
   }
 }
 
-// Simplified ping function that uses the iframe approach
-async function sendPing() {
+// Super simple ping function that just opens the URL directly
+function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
   
-  try {
-    pingBtn.disabled = true;
-    statusElement.className = 'status';
-    statusElement.innerHTML = 'Loading ping interface...';
-    statusElement.classList.remove('hidden');
-    
-    // Create and show iframe
-    const iframe = document.createElement('iframe');
-    iframe.src = '/api/ping-proxy';
-    iframe.style.width = '100%';
-    iframe.style.height = '250px';
-    iframe.style.border = '1px solid #ddd';
-    iframe.style.borderRadius = '4px';
-    
-    // Clear previous content and add iframe
-    statusElement.innerHTML = '';
-    statusElement.appendChild(iframe);
-    
-    // Listen for messages from iframe
-    window.addEventListener('message', function pingIframeHandler(event) {
-      if (event.data && event.data.type === 'ping-iframe-ready') {
-        // Iframe loaded successfully
-        console.log('Ping iframe loaded');
-      }
-    });
-    
-  } catch (error) {
-    statusElement.className = 'status error';
-    statusElement.innerHTML = `Error: ${error.message}`;
-  } finally {
+  pingBtn.disabled = true;
+  statusElement.className = 'status';
+  statusElement.innerHTML = '';
+  statusElement.classList.remove('hidden');
+  
+  // Just open the ping URL directly in a new window
+  window.open(`${CONFIG.WEBHOOK_SERVER}/ping`, '_blank');
+  
+  statusElement.className = 'status success';
+  statusElement.innerHTML = 'Ping sent in a new tab. Check for received webhooks after approving ngrok access.';
+  
+  // Re-enable the button after a short delay
+  setTimeout(() => {
     pingBtn.disabled = false;
-  }
+  }, 1000);
 }
 
 // Function to load received webhooks
 async function loadReceivedWebhooks() {
   try {
     const response = await fetch('/api/received');
-    const data = await response.json();
-    updateReceivedWebhooks(data);
+    if (response.ok) {
+      const data = await response.json();
+      updateReceivedWebhooks(data);
+    }
   } catch (error) {
     console.error('Error loading webhooks:', error);
   }
