@@ -186,36 +186,19 @@
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
         
-        // Add timestamp to prevent caching issues
-        const timestamp = new Date().getTime();
-        const response = await fetch(`/api/ping?t=${timestamp}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        try {
-          const data = await response.json();
+        // Show user the 404 error is expected and explain what's happening
+        statusElement.className = 'status';
+        statusElement.innerHTML = 'The /ping endpoint doesn\'t exist on the exposee server. ' +
+          'Check the API documentation for the correct ping endpoint or use the API docs link below.';
           
-          if (data && data.success) {
-            statusElement.className = 'status success';
-            statusElement.innerHTML = 'Ping sent successfully!';
-            console.log('Ping response:', data);
-          } else {
-            statusElement.className = 'status error';
-            statusElement.innerHTML = `Error: ${data?.error || data?.message || 'Failed to send ping'}`;
-          }
-        } catch (jsonError) {
-          console.error('Error parsing JSON:', jsonError);
-          statusElement.className = 'status error';
-          statusElement.innerHTML = 'Error: Failed to parse response from server';
-        }
+        // Provide a link to the API docs
+        const docsLink = document.createElement('div');
+        docsLink.innerHTML = '<br><a href="https://8636-91-101-72-250.ngrok-free.app/api-docs/" target="_blank">' +
+          '<button type="button">View API Documentation</button></a>';
+        statusElement.appendChild(docsLink);
+        
       } catch (error) {
-        console.error('Fetch error:', error);
-        statusElement.className = 'status error';
-        statusElement.innerHTML = `Error: ${error.message}`;
+        console.error('Error:', error);
       } finally {
         pingBtn.disabled = false;
       }
