@@ -77,30 +77,38 @@ app.get('/api/ping', async (req, res) => {
   }
 });
 
-// API endpoint to retrieve registered webhooks
+// API endpoint to return registered webhooks
 app.get('/registered-webhooks', (req, res) => {
   res.json(registeredWebhooks);
 });
 
-// Update your registration route to store the webhook
+// API endpoint to register a webhook
 app.post('/api/register', async (req, res) => {
   try {
-    // Your existing registration logic...
-    
-    // Store the registered webhook
-    const webhook = {
+    // Register with webhook server
+    const response = await axios.post(`${WEBHOOK_SERVER}/register-webhook`, {
       url: `${PUBLIC_URL}/webhook`,
       events: ['*'],
-      description: 'Webhook integrator endpoint',
-      timestamp: new Date().toISOString()
-    };
+      description: 'Webhook integrator endpoint'
+    });
     
-    registeredWebhooks = [webhook]; // Replace any existing webhook
+    // Store the registered webhook
+    const webhook = response.data;
+    registeredWebhooks = [webhook];
     
-    res.json({ success: true, webhook });
+    res.json({ 
+      success: true, 
+      message: 'Webhook registered successfully', 
+      webhook 
+    });
   } catch (error) {
     console.error('Error registering webhook:', error);
-    res.status(500).json({ success: false, error: error.message });
+    
+    res.status(500).json({
+      success: false,
+      message: error.response ? error.response.data.message || 'Registration failed' : 'Registration failed',
+      error: error.message
+    });
   }
 });
 
@@ -108,7 +116,7 @@ app.post('/api/register', async (req, res) => {
 app.all('/api/*', (req, res) => {
   res.status(404).json({ 
     error: 'API endpoint not found',
-    availableEndpoints: ['/api/ping', '/api/received-webhooks']
+    availableEndpoints: ['/api/ping', '/api/received-webhooks', '/api/register']
   });
 });
 

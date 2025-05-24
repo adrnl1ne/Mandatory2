@@ -153,37 +153,6 @@ async function sendPing() {
   }
 }
 
-// Add a demo webhook
-function addDemoWebhook() {
-  const newWebhook = {
-    timestamp: new Date().toISOString(),
-    data: {
-      event: "ping_response",
-      message: "This is a demonstration webhook",
-      timestamp: new Date().toISOString(),
-      payload: {
-        status: "success",
-        id: Math.random().toString(36).substring(2, 15),
-        source: "webhook_server"
-      }
-    }
-  };
-  
-  // Add to start of array
-  receivedWebhooks.unshift(newWebhook);
-  
-  // Keep only last 5 webhooks
-  if (receivedWebhooks.length > 5) {
-    receivedWebhooks = receivedWebhooks.slice(0, 5);
-  }
-  
-  // Save to localStorage
-  saveWebhooks();
-  
-  // Update UI
-  updateWebhooksUI();
-}
-
 // Clear all webhooks
 function clearWebhooks() {
   receivedWebhooks = [];
@@ -295,7 +264,6 @@ function init() {
   // Set up event listeners
   document.getElementById('registerBtn').addEventListener('click', registerWebhook);
   document.getElementById('pingBtn').addEventListener('click', sendPing);
-  document.getElementById('simulateBtn').addEventListener('click', addDemoWebhook);
   document.getElementById('clearBtn').addEventListener('click', clearWebhooks);
   
   // Load webhooks data 

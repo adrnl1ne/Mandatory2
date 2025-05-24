@@ -18,48 +18,7 @@
 <body>
   <h1>Webhook Endpoint</h1>
   <p>This endpoint is designed to receive webhook events from the webhook server.</p>
-  <p>Since this is a client-side application, webhook events received here will be displayed on the main page.</p>
+  <p>Webhook events received here will be displayed on the main page.</p>
   <p><a href="/">Return to main page</a></p>
-  
-  <script>
-    // When this page receives a POST request (a webhook)
-    // Add an entry to the simulated webhook list
-    // Note: This is for demonstration only - client-side pages can't actually
-    // receive POST requests directly, but we can simulate this behavior
-    document.addEventListener('DOMContentLoaded', function() {
-      // Simulate receiving a webhook
-      const simulatedWebhook = {
-        timestamp: new Date().toISOString(),
-        data: {
-          event: "page_loaded",
-          message: "Webhook endpoint page was loaded",
-          source: "webhook_endpoint"
-        }
-      };
-      
-      // Try to add to localStorage
-      try {
-        // Get existing webhooks
-        let receivedWebhooks = [];
-        const storedWebhooks = localStorage.getItem('receivedWebhooks');
-        if (storedWebhooks) {
-          receivedWebhooks = JSON.parse(storedWebhooks);
-        }
-        
-        // Add new webhook
-        receivedWebhooks.unshift(simulatedWebhook);
-        
-        // Keep only last 5
-        if (receivedWebhooks.length > 5) {
-          receivedWebhooks = receivedWebhooks.slice(0, 5);
-        }
-        
-        // Save back to localStorage
-        localStorage.setItem('receivedWebhooks', JSON.stringify(receivedWebhooks));
-      } catch (e) {
-        console.error('Error saving simulated webhook:', e);
-      }
-    });
-  </script>
 </body>
 </html>
