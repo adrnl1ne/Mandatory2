@@ -12,16 +12,20 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
   
-  // Get webhook server URL
-  const WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
+  // Get webhook server URL and ensure it doesn't end with a slash
+  let WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
+  // Remove trailing slash if present to prevent double slash
+  if (WEBHOOK_SERVER.endsWith('/')) {
+    WEBHOOK_SERVER = WEBHOOK_SERVER.slice(0, -1);
+  }
   
   try {
     console.log(`Sending ping request to ${WEBHOOK_SERVER}/ping`);
     
-    // Use GET request to the correct /ping endpoint as documented
+    // Use GET request with properly formatted URL
     const response = await axios({
-      method: 'get',  // Use GET as documented
-      url: `${WEBHOOK_SERVER}/ping`,  // Use the correct endpoint
+      method: 'get',
+      url: `${WEBHOOK_SERVER}/ping`,  // This will now be correctly formatted
       headers: {
         'Accept': 'application/json'
       },
@@ -38,8 +42,9 @@ module.exports = async (req, res) => {
     });
   } catch (error) {
     console.error('Error sending ping:', error.message);
+    console.log('Full error:', error);
     
-    // Return error response with proper formatting
+    // Return error response
     return res.status(200).json({
       success: false,
       message: `Error pinging webhook server: ${error.message}`,
