@@ -12,6 +12,25 @@ module.exports = (req, res) => {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+  
+  // Handle GET requests (retrieve webhooks)
+  if (req.method === 'GET') {
+    // Return some demo data if we don't have real webhooks yet
+    if (receivedWebhooks.length === 0) {
+      return res.status(200).json([
+        {
+          timestamp: new Date().toISOString(),
+          data: {
+            event: "demo_webhook",
+            message: "This is a demonstration webhook. Real webhooks will appear here when received.",
+            timestamp: new Date().toISOString()
+          }
+        }
+      ]);
+    }
+    
+    return res.status(200).json(receivedWebhooks);
+  }
 
   // Handle POST requests (store new webhook)
   if (req.method === 'POST') {
@@ -33,25 +52,6 @@ module.exports = (req, res) => {
       console.error('Error storing webhook:', error);
       return res.status(500).json({ success: false, error: 'Failed to store webhook' });
     }
-  }
-  
-  // Handle GET requests (retrieve webhooks)
-  if (req.method === 'GET') {
-    // Return stub data if we don't have real webhooks yet
-    if (receivedWebhooks.length === 0) {
-      return res.status(200).json([
-        {
-          timestamp: new Date().toISOString(),
-          data: {
-            event: "demo_webhook",
-            message: "This is a demonstration webhook. Real webhooks will appear here when received.",
-            timestamp: new Date().toISOString()
-          }
-        }
-      ]);
-    }
-    
-    return res.status(200).json(receivedWebhooks);
   }
   
   // Any other method is not allowed

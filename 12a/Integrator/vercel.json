@@ -1,13 +1,13 @@
 {
   "version": 2,
-  "public": true,
   "builds": [
+    { "src": "api/*.js", "use": "@vercel/node" },
     { "src": "public/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/webhook", "dest": "/public/webhook.html" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/public/$1" },
+    { "src": "/webhook", "dest": "/public/webhook.html" },
     { "src": "/(.*)", "dest": "/public/index.html" }
   ]
 }
