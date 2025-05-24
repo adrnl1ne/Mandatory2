@@ -24,7 +24,7 @@ async function registerWebhook() {
     
     // Register webhook
     console.log(`Registering webhook URL: ${PUBLIC_URL}/webhook`);
-    const response = await axios.post(`${WEBHOOK_SERVER}/webhooks/register`, {
+    const response = await axios.post(`${WEBHOOK_SERVER}/register-webhook`, {
       url: `${PUBLIC_URL}/webhook`,
       events: events, // Subscribe to all available events
       description: 'Webhook integrator endpoint'
