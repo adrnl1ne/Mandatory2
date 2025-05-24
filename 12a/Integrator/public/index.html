@@ -185,7 +185,7 @@
         statusElement.className = 'status';
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
-        
+        console.log("Sending ping to server:", CONFIG.WEBHOOK_SERVER + '/api/ping');
         // Use your API endpoint instead of direct connection
         const response = await fetch('api/ping', {
           method: 'POST'
