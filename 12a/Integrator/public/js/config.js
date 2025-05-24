@@ -5,5 +5,5 @@ const CONFIG = {
   
   // Your Vercel URL where the integrator is deployed
   // IMPORTANT: Update this to your current Vercel deployment URL
-  VERCEL_URL: "https://12a-integrator-git-main-jakob-helanders-projects.vercel.app"
+  VERCEL_URL: "https://12a-integrator.vercel.app"
 };
