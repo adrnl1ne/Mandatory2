@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webhook Debug Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    button { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    iframe { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Webhook Debug Tool</h1>
+  
+  <div class="card">
+    <h2>Register Webhook</h2>
+    <p>Register using form submission (no CORS issues):</p>
+    <form id="registerForm" target="responseFrame" action="https://8636-91-101-72-250.ngrok-free.app/register-webhook" method="post">
+      <input type="hidden" name="url" value="https://12aintegrator.vercel.app/webhook">
+      <input type="hidden" name="events" value="*">
+      <input type="hidden" name="description" value="Webhook integrator endpoint">
+      <button type="submit">Register Webhook</button>
+    </form>
+    <p id="registerStatus"></p>
+  </div>
+  
+  <div class="card">
+    <h2>Send Ping</h2>
+    <p>Open the ping URL directly in a new tab:</p>
+    <a href="https://8636-91-101-72-250.ngrok-free.app/ping" target="_blank">
+      <button type="button">Send Ping</button>
+    </a>
+    <p>This will bypass CORS by opening the URL directly.</p>
+  </div>
+  
+  <iframe name="responseFrame" id="responseFrame"></iframe>
+  
+  <script>
+    // Handle form submission response
+    document.getElementById('registerForm').onsubmit = function() {
+      document.getElementById('registerStatus').textContent = 'Submitting registration...';
+      
+      // Check iframe response after a delay
+      setTimeout(function() {
+        document.getElementById('registerStatus').textContent = 'Registration submitted. Check server logs for confirmation.';
+      }, 2000);
+      
+      return true;
+    };
+  </script>
+</body>
+</html>
