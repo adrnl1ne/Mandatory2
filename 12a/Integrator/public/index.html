@@ -140,6 +140,7 @@
         statusElement.innerHTML = 'Registering webhook...';
         statusElement.classList.remove('hidden');
         
+        console.log("Registering webhook with server:", CONFIG.WEBHOOK_SERVER);
         // Direct connection to webhook system
         const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, { 
           method: 'POST',
