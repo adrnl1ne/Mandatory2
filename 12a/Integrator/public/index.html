@@ -129,7 +129,7 @@
       }
     }
 
-    // Register webhook using server-side proxy
+    // Register webhook directly with the webhook system
     async function registerWebhook() {
       const registerBtn = document.getElementById('registerBtn');
       const statusElement = document.getElementById('registerStatus');
@@ -140,11 +140,20 @@
         statusElement.innerHTML = 'Registering webhook...';
         statusElement.classList.remove('hidden');
         
-        // Use the existing API endpoint instead of direct connection
-        const response = await fetch('/api/register', {
-          method: 'POST'
+        console.log("Registering webhook with server:", CONFIG.WEBHOOK_SERVER);
+        // Direct connection to webhook system
+        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: `${CONFIG.VERCEL_URL}/webhook`,
+            events: ["*"], // Request all events
+            description: 'Webhook integrator endpoint'
+          })
         });
-        
+        console.log("Webhook registration response:", response);
         const data = await response.json();
         
         if (response.ok) {
@@ -152,7 +161,7 @@
           statusElement.innerHTML = 'Webhook registered successfully!';
           
           // Display webhook details
-          document.getElementById('webhookDetails').textContent = JSON.stringify(data.webhook || data, null, 2);
+          document.getElementById('webhookDetails').textContent = JSON.stringify(data, null, 2);
           document.getElementById('webhookInfo').classList.remove('hidden');
         } else {
           statusElement.className = 'status error';
@@ -166,7 +175,7 @@
       }
     }
     
-    // Send a ping using server-side proxy
+    // Send a ping directly to webhook system
     async function sendPing() {
       const pingBtn = document.getElementById('pingBtn');
       const statusElement = document.getElementById('pingStatus');
@@ -177,19 +186,18 @@
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
         
-        // Use the existing API endpoint instead of direct connection
-        const response = await fetch('/api/ping', {
-          method: 'POST'
+        // Direct connection to webhook system
+        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/ping`, {
+          method: 'GET'
         });
         
-        const data = await response.json();
-        
         if (response.ok) {
+          const data = await response.json();
           statusElement.className = 'status success';
           statusElement.innerHTML = 'Ping sent successfully!';
         } else {
           statusElement.className = 'status error';
-          statusElement.innerHTML = `Error: ${data.error || 'Failed to send ping'}`;
+          statusElement.innerHTML = 'Failed to send ping. Server returned: ' + response.status;
         }
       } catch (error) {
         statusElement.className = 'status error';
