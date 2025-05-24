@@ -5,7 +5,11 @@ function log(area, message, data = null) {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [API:test-webhook] [${area}] ${message}`);
   if (data) {
-    console.log(JSON.stringify(data, null, 2));
+    try {
+      console.log(JSON.stringify(data, null, 2));
+    } catch (e) {
+      console.log('[Circular or non-serializable data]');
+    }
   }
 }
 
@@ -27,27 +31,55 @@ module.exports = async (req, res) => {
   try {
     log('TEST', 'Generating test webhook');
     
-    // Create test webhook data
+    // Get the current Vercel URL
+    const baseUrl = process.env.VERCEL_URL ? 
+      `https://${process.env.VERCEL_URL}` : 
+      req.headers.host ? `https://${req.headers.host}` : 'http://localhost:3000';
+    
+    log('TEST', `Using base URL: ${baseUrl}`);
+    
+    // Create test webhook data with a unique ID
+    const testId = Math.random().toString(36).substring(2, 15);
     const testWebhook = {
-      timestamp: new Date().toISOString(),
-      data: {
-        event: "test_webhook",
-        message: "This is a test webhook created by the test endpoint",
-        test_id: Math.random().toString(36).substring(2, 15)
-      }
+      event: "test_webhook",
+      message: "This is a test webhook created by the test endpoint",
+      test_id: testId,
+      timestamp: new Date().toISOString()
     };
     
     log('TEST', 'Created test webhook', testWebhook);
     
-    // Try to send the webhook to our own webhook endpoint
+    // First, try to directly add the webhook to our storage
     try {
-      const baseUrl = process.env.VERCEL_URL ? 
-        `https://${process.env.VERCEL_URL}` : 
-        'http://localhost:3000';
+      log('TEST', `Sending test webhook directly to API at ${baseUrl}/api/received-webhooks`);
       
+      const directResponse = await axios.post(`${baseUrl}/api/received-webhooks`, {
+        timestamp: new Date().toISOString(),
+        data: testWebhook
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Webhook-Integrator-Self-Test',
+          'X-Test-Webhook': '1'
+        },
+        timeout: 5000
+      });
+      
+      log('TEST', 'Direct storage successful', {
+        status: directResponse.status,
+        data: directResponse.data
+      });
+    } catch (directError) {
+      log('ERROR', 'Failed direct storage approach', {
+        message: directError.message
+      });
+    }
+    
+    // Then also try the actual webhook endpoint
+    try {
       log('TEST', `Sending test webhook to ${baseUrl}/webhook`);
       
-      const webhookResponse = await axios.post(`${baseUrl}/webhook`, testWebhook.data, {
+      const webhookResponse = await axios.post(`${baseUrl}/webhook`, testWebhook, {
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'Webhook-Integrator-Self-Test',
@@ -60,21 +92,30 @@ module.exports = async (req, res) => {
         status: webhookResponse.status,
         data: webhookResponse.data
       });
-      
-      // Now try to retrieve it from received-webhooks
-      log('TEST', 'Checking if webhook was received');
-      
+    } catch (webhookError) {
+      log('ERROR', 'Failed to send to webhook endpoint', {
+        message: webhookError.message
+      });
+    }
+    
+    // Wait a moment for processing
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Now try to retrieve it from received-webhooks
+    log('TEST', 'Checking if webhook was received');
+    
+    try {
       const receivedResponse = await axios.get(`${baseUrl}/api/received-webhooks`, {
         timeout: 5000
       });
       
       log('TEST', 'Received webhooks response', {
         status: receivedResponse.status,
-        count: receivedResponse.data?.length || 0
+        count: receivedResponse.data?.length || 0,
+        webhooks: receivedResponse.data
       });
       
       // Check if our test webhook is in the response
-      const testId = testWebhook.data.test_id;
       const found = receivedResponse.data.some(webhook => 
         webhook.data && webhook.data.test_id === testId
       );
@@ -85,7 +126,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({
           success: true,
           message: 'Test webhook sent and received successfully!',
-          testWebhook: testWebhook,
+          testId,
           found: true
         });
       } else {
@@ -94,31 +135,32 @@ module.exports = async (req, res) => {
         return res.status(202).json({
           success: false,
           message: 'Test webhook was sent but not found in received webhooks',
-          testWebhook: testWebhook,
-          found: false
+          testId,
+          found: false,
+          webhooks: receivedResponse.data
         });
       }
-    } catch (sendError) {
-      log('ERROR', 'Failed to send test webhook', {
-        message: sendError.message,
-        error: sendError
+    } catch (receivedError) {
+      log('ERROR', 'Failed to check received webhooks', {
+        message: receivedError.message
       });
       
       return res.status(500).json({
         success: false,
-        message: 'Failed to send test webhook',
-        error: sendError.message
+        message: 'Failed to verify if webhook was received',
+        error: receivedError.message,
+        testId
       });
     }
   } catch (error) {
     log('ERROR', 'Test webhook error', {
-      message: error.message,
-      error: error
+      message: error.message
     });
     
     return res.status(500).json({
       success: false,
-      error: 'Failed to create test webhook'
+      error: 'Failed to create test webhook',
+      message: error.message
     });
   }
 };

@@ -41,7 +41,6 @@ function saveWebhooks() {
 
 // Register webhook function
 async function registerWebhook() {
-  log('REGISTER', 'Register webhook button clicked');
   const registerBtn = document.getElementById('registerBtn');
   const statusElement = document.getElementById('registerStatus');
   
@@ -50,26 +49,21 @@ async function registerWebhook() {
   statusElement.innerHTML = 'Registering webhook...';
   statusElement.classList.remove('hidden');
   
-  // Get the webhook URL based on your environment configuration
-  // Make sure not to include the /webhook part twice
-  const baseUrl = CONFIG.VERCEL_URL.endsWith('/webhook') 
-    ? CONFIG.VERCEL_URL 
-    : `${CONFIG.VERCEL_URL}/webhook`;
-  
-  log('REGISTER', `Using webhook URL: ${baseUrl}`);
+  // Use the correct Vercel deployment URL from config
+  const webhookUrl = `${CONFIG.VERCEL_URL}/webhook`;
+  log('REGISTER', `Using webhook URL: ${webhookUrl}`);
   
   // Create webhook data
   const webhookData = {
-    url: baseUrl,
+    url: webhookUrl,
     events: ["*"],
     description: "Webhook integrator endpoint"
   };
-  
   log('REGISTER', 'Webhook data created', webhookData);
   
   try {
-    log('REGISTER', 'Sending registration request to webhook server');
     // Try to register directly with webhook server
+    log('REGISTER', 'Sending registration request to webhook server');
     const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, {
       method: 'POST',
       headers: {
@@ -95,7 +89,6 @@ async function registerWebhook() {
       description: webhookData.description,
       registered_at: new Date().toISOString()
     };
-    
     log('REGISTER', 'Full webhook data:', fullWebhookData);
     
     // Display webhook details
@@ -105,8 +98,13 @@ async function registerWebhook() {
     // Store registered webhook with all details
     localStorage.setItem('registeredWebhook', JSON.stringify(fullWebhookData));
     log('STORAGE', 'Registered webhook saved to localStorage');
+    
+    // Verify registration with a test webhook
+    setTimeout(() => {
+      testWebhook();
+    }, 2000);
   } catch (error) {
-    log('ERROR', 'Registration error:', error);
+    log('ERROR', 'Failed to register webhook', error);
     
     // Handle CORS and other errors
     statusElement.className = 'status';
@@ -127,7 +125,6 @@ async function registerWebhook() {
     
     // Store basic webhook data
     localStorage.setItem('registeredWebhook', JSON.stringify(webhookData));
-    log('STORAGE', 'Basic webhook data saved to localStorage');
   } finally {
     registerBtn.disabled = false;
   }
@@ -327,6 +324,7 @@ async function loadRegisteredWebhooks() {
               const webhooks = await response.json();
               log('REGISTRY', 'Verification response:', webhooks);
               
+
               if (webhooks && webhooks.length > 0) {
                 // Update with fresh data from server
                 document.getElementById('webhookDetails').textContent = JSON.stringify(webhooks[0], null, 2);

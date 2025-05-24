@@ -4,5 +4,6 @@ const CONFIG = {
   WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app",
   
   // Your Vercel URL where the integrator is deployed
-  VERCEL_URL: "https://12aintegrator.vercel.app"
+  // IMPORTANT: Update this to your current Vercel deployment URL
+  VERCEL_URL: "https://12a-integrator-gam2lo8pf-jakob-helanders-projects.vercel.app"
 };

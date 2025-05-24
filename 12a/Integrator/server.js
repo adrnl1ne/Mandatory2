@@ -6,9 +6,13 @@ const app = express();
 // Enhanced logging function
 function log(area, message, data = null) {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${area}] ${message}`);
+  console.log(`[${timestamp}] [SERVER] [${area}] ${message}`);
   if (data) {
-    console.log(JSON.stringify(data, null, 2));
+    try {
+      console.log(JSON.stringify(data, null, 2));
+    } catch (e) {
+      console.log('[Circular or non-serializable data]');
+    }
   }
 }
 
@@ -46,44 +50,39 @@ app.use((req, res, next) => {
 
 // Endpoint to receive webhooks
 app.post('/webhook', (req, res) => {
-  log('WEBHOOK', 'Received webhook', req.body);
+  log('WEBHOOK', 'Received webhook event', req.body);
   
-  // Add more detailed logging for webhook inspection
-  log('WEBHOOK_DETAILED', 'Full request information', {
-    headers: req.headers,
-    body: req.body,
-    method: req.method,
-    path: req.path,
-    query: req.query,
-    ip: req.ip
-  });
-  
+  // Create webhook data object
   const webhookData = {
     timestamp: new Date().toISOString(),
     data: req.body
   };
   
-  // Store webhook
+  // Store the webhook in our in-memory array
   receivedWebhooks.unshift(webhookData);
-  log('WEBHOOK', `Stored webhook, total count: ${receivedWebhooks.length}`);
+  log('WEBHOOK', `Added webhook to storage, count: ${receivedWebhooks.length}`);
   
-  // Keep only last 5
+  // Keep only the most recent 5 webhooks
   if (receivedWebhooks.length > 5) {
     receivedWebhooks = receivedWebhooks.slice(0, 5);
     log('WEBHOOK', 'Trimmed webhooks to 5');
   }
   
-  // Log success
-  log('WEBHOOK', 'Webhook successfully received and stored');
-  
-  // Return success
-  log('WEBHOOK', 'Returning success response');
-  res.status(200).json({ success: true, message: 'Webhook received' });
+  // Return a success response
+  log('WEBHOOK', 'Sending success response');
+  res.status(200).json({ 
+    success: true, 
+    message: 'Webhook received successfully',
+    webhook: webhookData
+  });
 });
 
 // API endpoint to get received webhooks
 app.get('/api/received-webhooks', (req, res) => {
-  log('API', 'GET /api/received-webhooks', { count: receivedWebhooks.length });
+  log('API', 'Received webhooks requested', { count: receivedWebhooks.length });
+  
+  // If we don't have any webhooks yet, provide an empty array
+  // Don't return demo data so it's clear whether real webhooks were received
   res.json(receivedWebhooks);
 });
 
