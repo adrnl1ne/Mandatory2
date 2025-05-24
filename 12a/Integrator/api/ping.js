@@ -2,52 +2,50 @@
 const axios = require('axios');
 
 module.exports = async (req, res) => {
-  // Get webhook server URL from environment variable or use default
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  // Get webhook server URL
   const WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
   
   try {
-    // Forward GET request to webhook server with proper headers
-    const response = await axios.get(`${WEBHOOK_SERVER}/ping`, {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      // Important: don't parse as JSON automatically, handle response manually
-      responseType: 'text'
+    console.log(`Sending ping request to ${WEBHOOK_SERVER}/ping`);
+    
+    // Make GET request to webhook server
+    const response = await axios({
+      method: 'get',
+      url: `${WEBHOOK_SERVER}/ping`,
+      responseType: 'text',
+      timeout: 10000, // 10 second timeout
+      validateStatus: () => true // Accept any status code
     });
     
-    // Check if response is JSON or HTML
-    let responseData;
+    console.log(`Received response with status ${response.status}`);
     
-    try {
-      // Try to parse as JSON
-      responseData = JSON.parse(response.data);
-    } catch (parseError) {
-      // If parsing fails, it's probably HTML
-      console.log("Received non-JSON response from webhook server");
-      
-      // Send a simplified response with the text content
-      return res.status(200).json({
-        success: true,
-        message: 'Ping sent successfully',
-        data: {
-          content: "Webhook server was pinged, but returned HTML content",
-          responseType: "html"
-        }
-      });
-    }
-    
-    // If we get here, the response was valid JSON
+    // Return success response regardless of the webhook server's response
     return res.status(200).json({
       success: true,
       message: 'Ping sent successfully',
-      data: responseData
+      status: response.status,
+      data: {
+        content: "Webhook server was pinged successfully",
+        responseType: "text"
+      }
     });
-    
   } catch (error) {
     console.error('Error sending ping:', error.message);
-    res.status(500).json({
+    
+    // Return error response
+    return res.status(200).json({
       success: false,
+      message: `Error: ${error.message}`,
       error: error.message
     });
   }

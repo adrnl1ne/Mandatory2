@@ -186,19 +186,34 @@
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
         
-        // Use your Vercel serverless function as a proxy
-        const response = await fetch('/api/ping');
-        const data = await response.json();
+        // Add timestamp to prevent caching issues
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/ping?t=${timestamp}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
         
-        if (data.success) {
-          statusElement.className = 'status success';
-          statusElement.innerHTML = 'Ping sent successfully!';
-          console.log('Ping response:', data);
-        } else {
+        try {
+          const data = await response.json();
+          
+          if (data && data.success) {
+            statusElement.className = 'status success';
+            statusElement.innerHTML = 'Ping sent successfully!';
+            console.log('Ping response:', data);
+          } else {
+            statusElement.className = 'status error';
+            statusElement.innerHTML = `Error: ${data?.error || data?.message || 'Failed to send ping'}`;
+          }
+        } catch (jsonError) {
+          console.error('Error parsing JSON:', jsonError);
           statusElement.className = 'status error';
-          statusElement.innerHTML = `Error: ${data.error || 'Failed to send ping'}`;
+          statusElement.innerHTML = 'Error: Failed to parse response from server';
         }
       } catch (error) {
+        console.error('Fetch error:', error);
         statusElement.className = 'status error';
         statusElement.innerHTML = `Error: ${error.message}`;
       } finally {
