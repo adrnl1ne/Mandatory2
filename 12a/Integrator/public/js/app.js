@@ -47,26 +47,34 @@ async function registerWebhook() {
   }
 }
 
-// Super simple ping function that just opens the URL directly
+// Direct ping function - no API calls
 function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
   
-  pingBtn.disabled = true;
-  statusElement.className = 'status';
-  statusElement.innerHTML = '';
-  statusElement.classList.remove('hidden');
-  
-  // Just open the ping URL directly in a new window
-  window.open(`${CONFIG.WEBHOOK_SERVER}/ping`, '_blank');
-  
-  statusElement.className = 'status success';
-  statusElement.innerHTML = 'Ping sent in a new tab. Check for received webhooks after approving ngrok access.';
-  
-  // Re-enable the button after a short delay
-  setTimeout(() => {
-    pingBtn.disabled = false;
-  }, 1000);
+  try {
+    pingBtn.disabled = true;
+    statusElement.className = 'status';
+    statusElement.innerHTML = '';
+    statusElement.classList.remove('hidden');
+    
+    // Direct approach: open the ping URL in a new tab
+    window.open(`${CONFIG.WEBHOOK_SERVER}/ping`, '_blank');
+    
+    // Show success message
+    statusElement.className = 'status success';
+    statusElement.innerHTML = `
+      <p>Ping request opened in new browser tab.</p>
+      <p>After handling any ngrok warning pages, check back here for received webhooks.</p>
+    `;
+  } catch (error) {
+    statusElement.className = 'status error';
+    statusElement.innerHTML = `Error: ${error.message}`;
+  } finally {
+    setTimeout(() => {
+      pingBtn.disabled = false;
+    }, 1000);
+  }
 }
 
 // Function to load received webhooks

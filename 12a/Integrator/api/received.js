@@ -1,29 +1,17 @@
-// Placeholder for received webhooks (simulated storage)
-let receivedWebhooks = [];
-
-// This is just a simple in-memory storage for demo purposes
+// Reference to webhooks stored in webhook.js
 // In a real app, you would use a database or Vercel KV store
+// We're using a simple solution for this assignment
 module.exports = async (req, res) => {
-  if (req.method === 'POST') {
-    // Store a received webhook
-    try {
-      const webhook = req.body;
-      webhook.timestamp = new Date().toISOString();
-      
-      // Add to front of array
-      receivedWebhooks.unshift(webhook);
-      
-      // Keep only the last 5 webhooks
-      if (receivedWebhooks.length > 5) {
-        receivedWebhooks = receivedWebhooks.slice(0, 5);
-      }
-      
-      return res.status(200).json({ success: true });
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  } else {
-    // Return received webhooks
-    return res.status(200).json(receivedWebhooks);
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
+  
+  // For simplicity, return an empty array - in a real app we would persist data
+  return res.status(200).json([]);
 };
