@@ -175,7 +175,7 @@
       }
     }
     
-    // Send a ping directly to webhook system
+    // Send a ping using the server-side proxy
     async function sendPing() {
       const pingBtn = document.getElementById('pingBtn');
       const statusElement = document.getElementById('pingStatus');
@@ -186,18 +186,19 @@
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
         
-        // Direct connection to webhook system
-        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/ping`, {
-          method: 'GET'
+        // Use your API endpoint instead of direct connection
+        const response = await fetch('/api/ping', {
+          method: 'POST'
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
-          const data = await response.json();
           statusElement.className = 'status success';
           statusElement.innerHTML = 'Ping sent successfully!';
         } else {
           statusElement.className = 'status error';
-          statusElement.innerHTML = 'Failed to send ping. Server returned: ' + response.status;
+          statusElement.innerHTML = `Error: ${data.error || 'Failed to send ping'}`;
         }
       } catch (error) {
         statusElement.className = 'status error';
