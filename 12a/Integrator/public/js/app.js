@@ -56,15 +56,20 @@ async function registerWebhook() {
     statusElement.className = 'status success';
     statusElement.innerHTML = 'Webhook registered successfully!';
     
+    // Format the response data nicely with additional details from our request
+    const fullWebhookData = {
+      ...data,
+      url: webhookData.url,
+      description: webhookData.description,
+      registered_at: new Date().toISOString()
+    };
+    
     // Display webhook details
-    document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
+    document.getElementById('webhookDetails').textContent = JSON.stringify(fullWebhookData, null, 2);
     document.getElementById('webhookInfo').classList.remove('hidden');
     
-    // Store registered webhook
-    localStorage.setItem('registeredWebhook', JSON.stringify(webhookData));
-    
-    // Refresh registered webhooks after a delay
-    setTimeout(loadRegisteredWebhooks, 1000);
+    // Store registered webhook with all details
+    localStorage.setItem('registeredWebhook', JSON.stringify(fullWebhookData));
   } catch (error) {
     // Handle CORS and other errors
     statusElement.className = 'status';
@@ -82,6 +87,9 @@ async function registerWebhook() {
     // Still show the webhook data
     document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
     document.getElementById('webhookInfo').classList.remove('hidden');
+    
+    // Store basic webhook data
+    localStorage.setItem('registeredWebhook', JSON.stringify(webhookData));
   } finally {
     registerBtn.disabled = false;
   }
@@ -207,34 +215,41 @@ async function loadReceivedWebhooks() {
   }
 }
 
-// Load registered webhooks from the server
+// Load registered webhooks from the webhook server
 async function loadRegisteredWebhooks() {
   try {
-    const response = await fetch('/registered-webhooks');
-    
-    if (response.ok) {
-      const webhooks = await response.json();
+    // Check if we have a cached webhook registration first
+    const savedWebhook = localStorage.getItem('registeredWebhook');
+    if (savedWebhook) {
+      // Display the stored webhook details
+      document.getElementById('webhookDetails').textContent = savedWebhook;
+      document.getElementById('webhookInfo').classList.remove('hidden');
       
-      // If we got registered webhooks from the server, display them
-      if (webhooks && webhooks.length > 0) {
-        // Update the webhook details display
-        document.getElementById('webhookDetails').textContent = JSON.stringify(webhooks[0], null, 2);
-        document.getElementById('webhookInfo').classList.remove('hidden');
+      // Try to verify it still exists on the webhook server
+      try {
+        // Query the webhook server using the CONFIG.WEBHOOK_SERVER URL
+        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/webhooks?url=${encodeURIComponent(`${CONFIG.VERCEL_URL}/webhook`)}`);
         
-        // Store for later use
-        localStorage.setItem('registeredWebhook', JSON.stringify(webhooks[0]));
-      } else if (localStorage.getItem('registeredWebhook')) {
-        // Fall back to localStorage if available
-        document.getElementById('webhookDetails').textContent = localStorage.getItem('registeredWebhook');
-        document.getElementById('webhookInfo').classList.remove('hidden');
+        if (response.ok) {
+          const webhooks = await response.json();
+          if (webhooks && webhooks.length > 0) {
+            // Update with fresh data from server
+            document.getElementById('webhookDetails').textContent = JSON.stringify(webhooks[0], null, 2);
+            localStorage.setItem('registeredWebhook', JSON.stringify(webhooks[0]));
+          }
+        }
+      } catch (verifyError) {
+        console.warn('Could not verify webhook with server:', verifyError);
+        // Continue using local data, no need to inform user
       }
     }
   } catch (error) {
     console.error('Error loading registered webhooks:', error);
     
-    // Fall back to localStorage if available
-    if (localStorage.getItem('registeredWebhook')) {
-      document.getElementById('webhookDetails').textContent = localStorage.getItem('registeredWebhook');
+    // Still try to display from localStorage if available
+    const savedWebhook = localStorage.getItem('registeredWebhook');
+    if (savedWebhook) {
+      document.getElementById('webhookDetails').textContent = savedWebhook;
       document.getElementById('webhookInfo').classList.remove('hidden');
     }
   }
