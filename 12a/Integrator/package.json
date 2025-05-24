@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Webhook integrator for SI Mandatory 2",
   "scripts": {
-    "start": "serve public"
+    "start": "vercel dev",
+    "deploy": "vercel deploy"
   },
-  "devDependencies": {
-    "serve": "^14.2.0"
+  "dependencies": {
+    "axios": "^0.27.2"
   }
 }
