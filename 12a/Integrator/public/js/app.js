@@ -32,9 +32,15 @@ async function registerWebhook() {
   statusElement.innerHTML = 'Registering webhook...';
   statusElement.classList.remove('hidden');
   
+  // Get the webhook URL based on your environment configuration
+  // Make sure not to include the /webhook part twice
+  const baseUrl = CONFIG.VERCEL_URL.endsWith('/webhook') 
+    ? CONFIG.VERCEL_URL 
+    : `${CONFIG.VERCEL_URL}/webhook`;
+  
   // Create webhook data
   const webhookData = {
-    url: `${CONFIG.VERCEL_URL}/webhook`,
+    url: baseUrl,
     events: ["*"],
     description: "Webhook integrator endpoint"
   };
@@ -78,7 +84,7 @@ async function registerWebhook() {
       <p>Please register manually:</p>
       <ol>
         <li>Open <a href="${CONFIG.WEBHOOK_SERVER}/register" target="_blank">the webhook server</a></li>
-        <li>Enter URL: <code>${CONFIG.VERCEL_URL}/webhook</code></li>
+        <li>Enter URL: <code>${webhookData.url}</code></li>
         <li>Select all event types</li>
         <li>Click "Register"</li>
       </ol>
@@ -190,27 +196,21 @@ async function loadRegisteredWebhooks() {
     // Check if we have a cached webhook registration first
     const savedWebhook = localStorage.getItem('registeredWebhook');
     if (savedWebhook) {
-      // Display the stored webhook details
-      document.getElementById('webhookDetails').textContent = savedWebhook;
-      document.getElementById('webhookInfo').classList.remove('hidden');
-      
-      // Try to verify it still exists on the webhook server
       try {
-        // Query the webhook server using the CONFIG.WEBHOOK_SERVER URL
-        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/webhooks?url=${encodeURIComponent(`${CONFIG.VERCEL_URL}/webhook`)}`);
-        
-        if (response.ok) {
-          const webhooks = await response.json();
-          if (webhooks && webhooks.length > 0) {
-            // Update with fresh data from server
-            document.getElementById('webhookDetails').textContent = JSON.stringify(webhooks[0], null, 2);
-            localStorage.setItem('registeredWebhook', JSON.stringify(webhooks[0]));
-          }
-        }
-      } catch (verifyError) {
-        console.warn('Could not verify webhook with server:', verifyError);
-        // Continue using local data, no need to inform user
+        // Try to parse the saved webhook properly
+        const webhookData = JSON.parse(savedWebhook);
+        // Display the stored webhook details
+        document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
+        document.getElementById('webhookInfo').classList.remove('hidden');
+      } catch (parseError) {
+        console.warn('Error parsing saved webhook:', parseError);
+        // Try to display it as is
+        document.getElementById('webhookDetails').textContent = savedWebhook;
+        document.getElementById('webhookInfo').classList.remove('hidden');
       }
+      
+      // Skip the webhook server verification since it's returning HTML
+      // We'll rely on our locally stored data instead
     }
   } catch (error) {
     console.error('Error loading registered webhooks:', error);
@@ -218,7 +218,11 @@ async function loadRegisteredWebhooks() {
     // Still try to display from localStorage if available
     const savedWebhook = localStorage.getItem('registeredWebhook');
     if (savedWebhook) {
-      document.getElementById('webhookDetails').textContent = savedWebhook;
+      try {
+        document.getElementById('webhookDetails').textContent = JSON.stringify(JSON.parse(savedWebhook), null, 2);
+      } catch (e) {
+        document.getElementById('webhookDetails').textContent = savedWebhook;
+      }
       document.getElementById('webhookInfo').classList.remove('hidden');
     }
   }
@@ -259,7 +263,13 @@ function init() {
   // Update UI with config values
   document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
   document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
-  document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
+  
+  // Properly format the webhook URL, avoiding double /webhook
+  const webhookUrl = CONFIG.VERCEL_URL.endsWith('/webhook') 
+    ? CONFIG.VERCEL_URL 
+    : `${CONFIG.VERCEL_URL}/webhook`;
+  
+  document.getElementById('publicUrl').textContent = webhookUrl;
   
   // Set up event listeners
   document.getElementById('registerBtn').addEventListener('click', registerWebhook);
@@ -272,7 +282,8 @@ function init() {
   
   // Set up polling for webhook updates
   setInterval(loadReceivedWebhooks, 5000);
-  setInterval(loadRegisteredWebhooks, 30000); // Check registered webhooks less frequently
+  // Skip calling loadRegisteredWebhooks periodically since it's causing errors
+  // We'll rely on the initially loaded data instead
 }
 
 // Initialize when DOM is ready
