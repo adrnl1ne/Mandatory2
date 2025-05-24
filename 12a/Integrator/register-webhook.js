@@ -2,7 +2,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 // Configuration
-const WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8fd5-195-249-146-101.ngrok-free.app';
+const WEBHOOK_SERVER = process.env.WEBHOOK_SERVER || 'https://8636-91-101-72-250.ngrok-free.app';
 
 // Determine PUBLIC_URL (works locally and on Vercel)
 let PUBLIC_URL;
