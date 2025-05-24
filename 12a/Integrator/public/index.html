@@ -116,24 +116,20 @@
       // The ngrok URL of the webhook system
       WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
     };
-  </script>
-  <script>
-    // Fetch configuration from the server
+
+    // Fetch configuration from the server with error handling
     async function fetchConfig() {
       try {
-        const response = await fetch(`${CONFIG.VERCEL_URL}/api/config`);
-        const data = await response.json();
-        
-        // Update the UI with configuration
+        // Direct connection to webhook system instead of through Vercel API
         document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
         document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
         document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
       } catch (error) {
-        console.error('Error fetching config:', error);
+        console.error('Error setting up configuration:', error);
       }
     }
 
-    // Register webhook with the server
+    // Register webhook directly with the webhook system
     async function registerWebhook() {
       const registerBtn = document.getElementById('registerBtn');
       const statusElement = document.getElementById('registerStatus');
@@ -144,7 +140,19 @@
         statusElement.innerHTML = 'Registering webhook...';
         statusElement.classList.remove('hidden');
         
-        const response = await fetch(`${CONFIG.VERCEL_URL}/api/register`, { method: 'POST' });
+        // Direct connection to webhook system
+        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: `${CONFIG.VERCEL_URL}/webhook`,
+            events: ["*"], // Request all events
+            description: 'Webhook integrator endpoint'
+          })
+        });
+        
         const data = await response.json();
         
         if (response.ok) {
@@ -166,7 +174,7 @@
       }
     }
     
-    // Send a ping to test the webhook
+    // Send a ping directly to webhook system
     async function sendPing() {
       const pingBtn = document.getElementById('pingBtn');
       const statusElement = document.getElementById('pingStatus');
@@ -177,15 +185,18 @@
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
         
-        const response = await fetch(`${CONFIG.VERCEL_URL}/api/ping`, { method: 'POST' });
-        const data = await response.json();
+        // Direct connection to webhook system
+        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/ping`, {
+          method: 'GET'
+        });
         
         if (response.ok) {
+          const data = await response.json();
           statusElement.className = 'status success';
           statusElement.innerHTML = 'Ping sent successfully!';
         } else {
           statusElement.className = 'status error';
-          statusElement.innerHTML = `Error: ${data.error || 'Failed to send ping'}`;
+          statusElement.innerHTML = 'Failed to send ping. Server returned: ' + response.status;
         }
       } catch (error) {
         statusElement.className = 'status error';
@@ -195,38 +206,45 @@
       }
     }
     
-    // Function to load received webhooks
+    // Function to handle received webhooks display
+    function updateReceivedWebhooks(webhooks = []) {
+      const webhooksContainer = document.getElementById('receivedWebhooks');
+      const noWebhooksElement = document.getElementById('noWebhooks');
+      
+      if (webhooks && webhooks.length > 0) {
+        noWebhooksElement.classList.add('hidden');
+        webhooksContainer.innerHTML = '';
+        
+        webhooks.forEach((webhook, index) => {
+          const webhookElement = document.createElement('div');
+          webhookElement.className = 'status';
+          webhookElement.style.marginBottom = '10px';
+          
+          const timeReceived = new Date(webhook.timestamp || Date.now()).toLocaleString();
+          webhookElement.innerHTML = `
+            <h4>Webhook #${index + 1} - ${timeReceived}</h4>
+            <pre>${JSON.stringify(webhook.data || webhook, null, 2)}</pre>
+          `;
+          
+          webhooksContainer.appendChild(webhookElement);
+        });
+      } else {
+        noWebhooksElement.classList.remove('hidden');
+        webhooksContainer.innerHTML = '';
+      }
+    }
+    
+    // Mock function since Vercel API is not working
     async function loadReceivedWebhooks() {
       try {
-        const response = await fetch(`${CONFIG.VERCEL_URL}/api/received`);
-        const data = await response.json();
+        // For now, we'll just show a message that we can't load webhooks
+        console.log("Note: Can't load webhooks from Vercel API - endpoint not working.");
         
-        const webhooksContainer = document.getElementById('receivedWebhooks');
+        // Keep the UI showing no webhooks
         const noWebhooksElement = document.getElementById('noWebhooks');
-        
-        if (data && data.length > 0) {
-          noWebhooksElement.classList.add('hidden');
-          webhooksContainer.innerHTML = '';
-          
-          data.forEach((webhook, index) => {
-            const webhookElement = document.createElement('div');
-            webhookElement.className = 'status';
-            webhookElement.style.marginBottom = '10px';
-            
-            const timeReceived = new Date(webhook.timestamp).toLocaleString();
-            webhookElement.innerHTML = `
-              <h4>Webhook #${index + 1} - ${timeReceived}</h4>
-              <pre>${JSON.stringify(webhook.data, null, 2)}</pre>
-            `;
-            
-            webhooksContainer.appendChild(webhookElement);
-          });
-        } else {
-          noWebhooksElement.classList.remove('hidden');
-          webhooksContainer.innerHTML = '';
-        }
+        noWebhooksElement.textContent = "Can't load webhooks from the server. Try sending a ping to create new webhooks.";
       } catch (error) {
-        console.error('Error loading webhooks:', error);
+        console.error('Error handling webhooks display:', error);
       }
     }
     
@@ -239,11 +257,8 @@
       document.getElementById('registerBtn').addEventListener('click', registerWebhook);
       document.getElementById('pingBtn').addEventListener('click', sendPing);
       
-      // Load received webhooks initially
+      // Initial UI setup
       loadReceivedWebhooks();
-      
-      // Refresh webhooks periodically (every 5 seconds)
-      setInterval(loadReceivedWebhooks, 5000);
     }
     
     // Start the application when the page loads
