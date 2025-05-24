@@ -106,16 +106,17 @@
     </div>
   </div>
   
+  <script src="js/config.js"></script>
   <script>
     // Fetch configuration from the server
     async function fetchConfig() {
-      const response = await fetch('/api/config');
+      const response = await fetch(`${CONFIG.VERCEL_URL}/api/config`);
       const data = await response.json();
       
       // Update the UI with configuration
-      document.getElementById('webhookServerUrl').href = data.webhookServer;
-      document.getElementById('webhookServerUrl').textContent = data.webhookServer;
-      document.getElementById('publicUrl').textContent = `${data.publicUrl}/webhook`;
+      document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
+      document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
+      document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
     }
 
     // Register webhook with the server
@@ -129,7 +130,7 @@
         statusElement.innerHTML = 'Registering webhook...';
         statusElement.classList.remove('hidden');
         
-        const response = await fetch('/api/register', { method: 'POST' });
+        const response = await fetch(`${CONFIG.VERCEL_URL}/api/register`, { method: 'POST' });
         const data = await response.json();
         
         if (response.ok) {
@@ -162,7 +163,7 @@
         statusElement.innerHTML = 'Sending ping...';
         statusElement.classList.remove('hidden');
         
-        const response = await fetch('/api/ping', { method: 'POST' });
+        const response = await fetch(`${CONFIG.VERCEL_URL}/api/ping`, { method: 'POST' });
         const data = await response.json();
         
         if (response.ok) {
@@ -183,7 +184,7 @@
     // Function to load received webhooks
     async function loadReceivedWebhooks() {
       try {
-        const response = await fetch('/api/received');
+        const response = await fetch(`${CONFIG.VERCEL_URL}/api/received`);
         const data = await response.json();
         
         const webhooksContainer = document.getElementById('receivedWebhooks');
