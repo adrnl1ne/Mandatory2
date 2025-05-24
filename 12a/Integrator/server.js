@@ -3,10 +3,24 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const app = express();
 
+// Enhanced logging function
+function log(area, message, data = null) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [${area}] ${message}`);
+  if (data) {
+    console.log(JSON.stringify(data, null, 2));
+  }
+}
+
+log('SERVER', 'Starting server...');
+
 // Configuration
 const WEBHOOK_SERVER = 'https://8636-91-101-72-250.ngrok-free.app';
+log('CONFIG', `Webhook server: ${WEBHOOK_SERVER}`);
+
 const PUBLIC_URL = process.env.VERCEL_URL ? 
   `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+log('CONFIG', `Public URL: ${PUBLIC_URL}`);
 
 // In-memory storage for webhooks (resets when serverless function is cold)
 let receivedWebhooks = [];
@@ -17,6 +31,8 @@ let registeredWebhooks = [];
 // Middleware
 app.use(bodyParser.json());
 app.use((req, res, next) => {
+  log('REQUEST', `${req.method} ${req.originalUrl}`);
+  
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -30,7 +46,7 @@ app.use((req, res, next) => {
 
 // Endpoint to receive webhooks
 app.post('/webhook', (req, res) => {
-  console.log('Webhook received:', req.body);
+  log('WEBHOOK', 'Received webhook', req.body);
   
   const webhookData = {
     timestamp: new Date().toISOString(),
@@ -39,27 +55,38 @@ app.post('/webhook', (req, res) => {
   
   // Store webhook
   receivedWebhooks.unshift(webhookData);
+  log('WEBHOOK', `Stored webhook, total count: ${receivedWebhooks.length}`);
   
   // Keep only last 5
   if (receivedWebhooks.length > 5) {
     receivedWebhooks = receivedWebhooks.slice(0, 5);
+    log('WEBHOOK', 'Trimmed webhooks to 5');
   }
   
   // Return success
+  log('WEBHOOK', 'Returning success response');
   res.status(200).json({ success: true, message: 'Webhook received' });
 });
 
 // API endpoint to get received webhooks
 app.get('/api/received-webhooks', (req, res) => {
+  log('API', 'GET /api/received-webhooks', { count: receivedWebhooks.length });
   res.json(receivedWebhooks);
 });
 
 // API endpoint to ping the webhook server
 app.get('/api/ping', async (req, res) => {
+  log('API', 'GET /api/ping - Sending ping to webhook server');
+  
   try {
-    const response = await axios.get(`${WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, {
+    const pingUrl = `${WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`;
+    log('API', `Pinging URL: ${pingUrl}`);
+    
+    const response = await axios.get(pingUrl, {
       timeout: 5000
     });
+    
+    log('API', 'Ping successful', response.data);
     
     res.json({
       success: true,
@@ -67,7 +94,13 @@ app.get('/api/ping', async (req, res) => {
       data: response.data
     });
   } catch (error) {
-    console.error('Error sending ping:', error);
+    log('ERROR', 'Ping failed', {
+      message: error.message,
+      response: error.response ? { 
+        status: error.response.status,
+        data: error.response.data
+      } : null
+    });
     
     res.status(500).json({
       success: false,
@@ -79,18 +112,29 @@ app.get('/api/ping', async (req, res) => {
 
 // API endpoint to return registered webhooks
 app.get('/registered-webhooks', (req, res) => {
+  log('API', 'GET /registered-webhooks', { 
+    count: registeredWebhooks.length,
+    webhooks: registeredWebhooks 
+  });
   res.json(registeredWebhooks);
 });
 
 // API endpoint to register a webhook
 app.post('/api/register', async (req, res) => {
+  log('API', 'POST /api/register - Registering webhook');
+  
   try {
     // Register with webhook server
+    const webhookUrl = `${PUBLIC_URL}/webhook`;
+    log('REGISTER', `Registering webhook URL: ${webhookUrl}`);
+    
     const response = await axios.post(`${WEBHOOK_SERVER}/register-webhook`, {
-      url: `${PUBLIC_URL}/webhook`,
+      url: webhookUrl,
       events: ['*'],
       description: 'Webhook integrator endpoint'
     });
+    
+    log('REGISTER', 'Registration successful', response.data);
     
     // Store the registered webhook
     const webhook = response.data;
@@ -102,7 +146,13 @@ app.post('/api/register', async (req, res) => {
       webhook 
     });
   } catch (error) {
-    console.error('Error registering webhook:', error);
+    log('ERROR', 'Registration failed', {
+      message: error.message,
+      response: error.response ? { 
+        status: error.response.status,
+        data: error.response.data
+      } : null
+    });
     
     res.status(500).json({
       success: false,
@@ -114,6 +164,7 @@ app.post('/api/register', async (req, res) => {
 
 // Handle all other API routes
 app.all('/api/*', (req, res) => {
+  log('API', `404 Not Found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ 
     error: 'API endpoint not found',
     availableEndpoints: ['/api/ping', '/api/received-webhooks', '/api/register']
@@ -127,6 +178,6 @@ module.exports = app;
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    log('SERVER', `Server running at http://localhost:${PORT}`);
   });
 }

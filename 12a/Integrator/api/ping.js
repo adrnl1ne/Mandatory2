@@ -1,8 +1,19 @@
 // Direct ping endpoint that doesn't redirect
 const axios = require('axios');
 
+// Enhanced logging function
+function log(area, message, data = null) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [API:ping] [${area}] ${message}`);
+  if (data) {
+    console.log(JSON.stringify(data, null, 2));
+  }
+}
+
 // Export a function that handles the request
 module.exports = async (req, res) => {
+  log('REQUEST', `${req.method} ${req.url || 'ping endpoint'}`);
+  
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -10,26 +21,39 @@ module.exports = async (req, res) => {
   
   // Handle OPTIONS requests
   if (req.method === 'OPTIONS') {
+    log('CORS', 'Handling OPTIONS preflight request');
     return res.status(200).end();
   }
 
   try {
     // Get the webhook server URL
     const WEBHOOK_SERVER = 'https://8636-91-101-72-250.ngrok-free.app';
+    const pingUrl = `${WEBHOOK_SERVER}/ping?from=vercel&t=${Date.now()}`;
+    
+    log('PING', `Sending ping to: ${pingUrl}`);
     
     // Send the ping request to the webhook server
-    const response = await axios.get(`${WEBHOOK_SERVER}/ping?from=vercel&t=${Date.now()}`, {
+    const response = await axios.get(pingUrl, {
       timeout: 10000 // 10 second timeout
     });
     
+    log('PING', 'Ping successful', response.data);
+    
     // Return the response from the webhook server
+    log('RESPONSE', 'Sending success response');
     return res.status(200).json({
       success: true,
       message: 'Ping sent successfully! Check below for webhooks in a moment.',
       response: response.data
     });
   } catch (error) {
-    console.error('Error sending ping:', error);
+    log('ERROR', 'Ping failed', {
+      message: error.message,
+      response: error.response ? { 
+        status: error.response.status,
+        data: error.response.data
+      } : null
+    });
     
     // Try to provide helpful error information
     let errorMessage = 'Failed to send ping';
@@ -41,6 +65,7 @@ module.exports = async (req, res) => {
       errorMessage += `: ${error.message}`;
     }
     
+    log('RESPONSE', 'Sending error response', { errorMessage });
     return res.status(500).json({
       success: false,
       message: errorMessage,

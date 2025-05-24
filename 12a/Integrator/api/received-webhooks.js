@@ -2,7 +2,18 @@
 // Note: This will reset when the function goes cold
 const receivedWebhooks = [];
 
+// Enhanced logging function
+function log(area, message, data = null) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [API:received-webhooks] [${area}] ${message}`);
+  if (data) {
+    console.log(JSON.stringify(data, null, 2));
+  }
+}
+
 module.exports = (req, res) => {
+  log('REQUEST', `${req.method} ${req.url || 'received-webhooks endpoint'}`);
+
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -10,46 +21,67 @@ module.exports = (req, res) => {
   
   // Handle OPTIONS requests
   if (req.method === 'OPTIONS') {
+    log('CORS', 'Handling OPTIONS preflight request');
     return res.status(200).end();
   }
   
   // Handle POST requests (store new webhook)
   if (req.method === 'POST') {
+    log('WEBHOOK', 'Handling POST request to store webhook');
+    
     try {
       const webhook = req.body;
+      log('WEBHOOK', 'Received webhook data', webhook);
       
       // Make sure timestamp exists
       if (!webhook.timestamp) {
         webhook.timestamp = new Date().toISOString();
+        log('WEBHOOK', `Added timestamp: ${webhook.timestamp}`);
       }
       
       // Add to the beginning of the array
       receivedWebhooks.unshift(webhook);
+      log('WEBHOOK', `Stored webhook, total count: ${receivedWebhooks.length}`);
       
       // Keep only the most recent 5 webhooks
       if (receivedWebhooks.length > 5) {
         receivedWebhooks.splice(5);
+        log('WEBHOOK', 'Trimmed webhooks to 5');
       }
       
+      log('RESPONSE', 'Sending success response');
       return res.status(200).json({ 
         success: true, 
         message: 'Webhook stored',
         webhooks: receivedWebhooks 
       });
     } catch (error) {
-      console.error('Error storing webhook:', error);
-      return res.status(500).json({ success: false, error: 'Failed to store webhook' });
+      log('ERROR', 'Error storing webhook', {
+        message: error.message,
+        error: error
+      });
+      
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to store webhook' 
+      });
     }
   }
   
   // Handle GET requests (retrieve webhooks)
   if (req.method === 'GET') {
+    log('WEBHOOK', 'Handling GET request', { 
+      count: receivedWebhooks.length 
+    });
+    
     // If we have stored webhooks, return them
     if (receivedWebhooks.length > 0) {
+      log('RESPONSE', 'Returning stored webhooks');
       return res.status(200).json(receivedWebhooks);
     } 
     
     // Otherwise return a sample webhook
+    log('RESPONSE', 'No webhooks, returning sample webhook');
     return res.status(200).json([{
       timestamp: new Date().toISOString(),
       data: {
@@ -61,5 +93,6 @@ module.exports = (req, res) => {
   }
   
   // Any other method is not allowed
+  log('ERROR', `Method not allowed: ${req.method}`);
   return res.status(405).json({ error: 'Method not allowed' });
 };

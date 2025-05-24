@@ -1,29 +1,47 @@
 // Storage for webhooks using localStorage as fallback
 let receivedWebhooks = [];
 
+// Client-side logging function
+function log(area, message, data = null) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`[CLIENT] [${timestamp}] [${area}] ${message}`);
+  if (data) {
+    console.log(data);
+  }
+}
+
+log('INIT', 'Loading app.js');
+
 // Load webhooks from local storage (fallback)
 function loadStoredWebhooks() {
+  log('STORAGE', 'Loading webhooks from localStorage');
   try {
     const storedWebhooks = localStorage.getItem('receivedWebhooks');
     if (storedWebhooks) {
       receivedWebhooks = JSON.parse(storedWebhooks);
+      log('STORAGE', `Loaded ${receivedWebhooks.length} webhooks`);
+    } else {
+      log('STORAGE', 'No stored webhooks found');
     }
   } catch (e) {
-    console.error('Error loading webhooks from storage:', e);
+    log('ERROR', 'Error loading webhooks from storage:', e);
   }
 }
 
 // Save webhooks to localStorage (fallback)
 function saveWebhooks() {
+  log('STORAGE', `Saving ${receivedWebhooks.length} webhooks to localStorage`);
   try {
     localStorage.setItem('receivedWebhooks', JSON.stringify(receivedWebhooks));
+    log('STORAGE', 'Webhooks saved successfully');
   } catch (e) {
-    console.error('Error saving webhooks:', e);
+    log('ERROR', 'Error saving webhooks:', e);
   }
 }
 
 // Register webhook function
 async function registerWebhook() {
+  log('REGISTER', 'Register webhook button clicked');
   const registerBtn = document.getElementById('registerBtn');
   const statusElement = document.getElementById('registerStatus');
   
@@ -38,6 +56,8 @@ async function registerWebhook() {
     ? CONFIG.VERCEL_URL 
     : `${CONFIG.VERCEL_URL}/webhook`;
   
+  log('REGISTER', `Using webhook URL: ${baseUrl}`);
+  
   // Create webhook data
   const webhookData = {
     url: baseUrl,
@@ -45,7 +65,10 @@ async function registerWebhook() {
     description: "Webhook integrator endpoint"
   };
   
+  log('REGISTER', 'Webhook data created', webhookData);
+  
   try {
+    log('REGISTER', 'Sending registration request to webhook server');
     // Try to register directly with webhook server
     const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, {
       method: 'POST',
@@ -55,8 +78,11 @@ async function registerWebhook() {
       body: JSON.stringify(webhookData)
     });
     
+    log('REGISTER', `Registration response status: ${response.status}`);
+    
     // Get response
     const data = await response.json();
+    log('REGISTER', 'Registration response data:', data);
     
     // Show success
     statusElement.className = 'status success';
@@ -70,13 +96,18 @@ async function registerWebhook() {
       registered_at: new Date().toISOString()
     };
     
+    log('REGISTER', 'Full webhook data:', fullWebhookData);
+    
     // Display webhook details
     document.getElementById('webhookDetails').textContent = JSON.stringify(fullWebhookData, null, 2);
     document.getElementById('webhookInfo').classList.remove('hidden');
     
     // Store registered webhook with all details
     localStorage.setItem('registeredWebhook', JSON.stringify(fullWebhookData));
+    log('STORAGE', 'Registered webhook saved to localStorage');
   } catch (error) {
+    log('ERROR', 'Registration error:', error);
+    
     // Handle CORS and other errors
     statusElement.className = 'status';
     statusElement.innerHTML = `
@@ -96,6 +127,7 @@ async function registerWebhook() {
     
     // Store basic webhook data
     localStorage.setItem('registeredWebhook', JSON.stringify(webhookData));
+    log('STORAGE', 'Basic webhook data saved to localStorage');
   } finally {
     registerBtn.disabled = false;
   }
@@ -103,6 +135,7 @@ async function registerWebhook() {
 
 // Send ping function - NO REDIRECT
 async function sendPing() {
+  log('PING', 'Send ping button clicked');
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
   
@@ -112,10 +145,15 @@ async function sendPing() {
   statusElement.classList.remove('hidden');
   
   try {
+    log('PING', 'Sending ping request to API endpoint');
     const response = await fetch('/api/ping');
+    log('PING', `Ping response status: ${response.status}`);
+    
     const data = await response.json();
+    log('PING', 'Ping response data:', data);
     
     if (data.success) {
+      log('PING', 'Ping successful');
       statusElement.className = 'status success';
       statusElement.innerHTML = `
         <p>Ping sent successfully!</p>
@@ -123,14 +161,27 @@ async function sendPing() {
       `;
       
       // Check for webhooks multiple times after ping
-      setTimeout(loadReceivedWebhooks, 1000);
-      setTimeout(loadReceivedWebhooks, 3000);
-      setTimeout(loadReceivedWebhooks, 6000);
+      log('PING', 'Setting up webhook checks');
+      setTimeout(() => {
+        log('PING', 'Checking for webhooks (1st attempt)');
+        loadReceivedWebhooks();
+      }, 1000);
+      
+      setTimeout(() => {
+        log('PING', 'Checking for webhooks (2nd attempt)');
+        loadReceivedWebhooks();
+      }, 3000);
+      
+      setTimeout(() => {
+        log('PING', 'Checking for webhooks (3rd attempt)');
+        loadReceivedWebhooks();
+      }, 6000);
     } else {
+      log('PING', 'Ping failed:', data.message);
       throw new Error(data.message || 'Failed to send ping');
     }
   } catch (error) {
-    console.error('Error sending ping:', error);
+    log('ERROR', 'Ping error:', error);
     
     statusElement.className = 'status error';
     statusElement.innerHTML = `
@@ -139,8 +190,12 @@ async function sendPing() {
     `;
     
     // Fallback to opening in a new tab with target=_blank
+    log('PING', 'Using fallback method (new tab)');
     setTimeout(() => {
-      window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
+      const pingUrl = `${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`;
+      log('PING', `Opening ping URL in new tab: ${pingUrl}`);
+      
+      window.open(pingUrl, '_blank');
       
       statusElement.className = 'status';
       statusElement.innerHTML = `
@@ -149,42 +204,62 @@ async function sendPing() {
       `;
       
       // Try to load webhooks after some time
-      setTimeout(loadReceivedWebhooks, 2000);
-      setTimeout(loadReceivedWebhooks, 5000);
+      log('PING', 'Setting up fallback webhook checks');
+      setTimeout(() => {
+        log('PING', 'Checking for webhooks (fallback 1st attempt)');
+        loadReceivedWebhooks();
+      }, 2000);
+      
+      setTimeout(() => {
+        log('PING', 'Checking for webhooks (fallback 2nd attempt)');
+        loadReceivedWebhooks();
+      }, 5000);
     }, 1000);
   } finally {
     setTimeout(() => {
       pingBtn.disabled = false;
+      log('PING', 'Re-enabled ping button');
     }, 2000);
   }
 }
 
 // Clear all webhooks
 function clearWebhooks() {
+  log('CLEAR', 'Clear webhooks button clicked');
   receivedWebhooks = [];
   saveWebhooks();
   updateWebhooksUI();
+  log('CLEAR', 'Webhooks cleared');
 }
 
 // Load received webhooks from the server
 async function loadReceivedWebhooks() {
+  log('LOAD', 'Loading received webhooks from API');
   try {
     const response = await fetch('/api/received-webhooks');
+    log('LOAD', `API response status: ${response.status}`);
     
     if (response.ok) {
       const webhooks = await response.json();
+      log('LOAD', `Received ${webhooks.length} webhooks from API`);
       
       // If we got real webhooks from the server, use them
       if (Array.isArray(webhooks) && webhooks.length > 0) {
         receivedWebhooks = webhooks;
+        log('LOAD', 'Updated webhooks with API data');
         saveWebhooks(); // Save to localStorage as backup
+      } else {
+        log('LOAD', 'No webhooks received from API');
       }
       
       // Update the UI
       updateWebhooksUI();
+    } else {
+      log('LOAD', `Failed to load webhooks: ${response.statusText}`);
     }
   } catch (error) {
-    console.error('Error loading webhooks:', error);
+    log('ERROR', 'Error loading webhooks:', error);
+    log('LOAD', 'Using local data instead');
     // Just use the local data we have
     updateWebhooksUI();
   }
@@ -192,32 +267,79 @@ async function loadReceivedWebhooks() {
 
 // Load registered webhooks from the webhook server
 async function loadRegisteredWebhooks() {
+  log('REGISTRY', 'Loading registered webhook info');
   try {
     // Check if we have a cached webhook registration first
     const savedWebhook = localStorage.getItem('registeredWebhook');
     if (savedWebhook) {
+      log('REGISTRY', 'Found saved webhook in localStorage');
       try {
         // Try to parse the saved webhook properly
         const webhookData = JSON.parse(savedWebhook);
+        log('REGISTRY', 'Parsed webhook data successfully', webhookData);
+        
         // Display the stored webhook details
         document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
         document.getElementById('webhookInfo').classList.remove('hidden');
       } catch (parseError) {
-        console.warn('Error parsing saved webhook:', parseError);
+        log('ERROR', 'Error parsing saved webhook:', parseError);
+        
         // Try to display it as is
         document.getElementById('webhookDetails').textContent = savedWebhook;
         document.getElementById('webhookInfo').classList.remove('hidden');
       }
       
-      // Skip the webhook server verification since it's returning HTML
-      // We'll rely on our locally stored data instead
+      // Only try to verify if explicitly requested
+      if (arguments[0] === 'verify') {
+        try {
+          log('REGISTRY', 'Verifying webhook registration with server');
+          
+          // Query the webhook server using the CONFIG.WEBHOOK_SERVER URL
+          const baseUrl = CONFIG.VERCEL_URL.endsWith('/webhook') 
+            ? CONFIG.VERCEL_URL 
+            : `${CONFIG.VERCEL_URL}/webhook`;
+            
+          const verifyUrl = `${CONFIG.WEBHOOK_SERVER}/webhooks?url=${encodeURIComponent(baseUrl)}`;
+          log('REGISTRY', `Verification URL: ${verifyUrl}`);
+          
+          const response = await fetch(verifyUrl);
+          
+          if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            log('REGISTRY', `Verify response content type: ${contentType}`);
+            
+            if (contentType && contentType.includes('application/json')) {
+              const webhooks = await response.json();
+              log('REGISTRY', 'Verification response:', webhooks);
+              
+              if (webhooks && webhooks.length > 0) {
+                // Update with fresh data from server
+                document.getElementById('webhookDetails').textContent = JSON.stringify(webhooks[0], null, 2);
+                localStorage.setItem('registeredWebhook', JSON.stringify(webhooks[0]));
+                log('REGISTRY', 'Updated webhook data from server verification');
+              } else {
+                log('REGISTRY', 'No registered webhooks found on server');
+              }
+            } else {
+              log('REGISTRY', 'Server responded with non-JSON content');
+            }
+          } else {
+            log('REGISTRY', `Verification failed: ${response.status} ${response.statusText}`);
+          }
+        } catch (verifyError) {
+          log('ERROR', 'Could not verify webhook with server:', verifyError);
+        }
+      }
+    } else {
+      log('REGISTRY', 'No saved webhook found in localStorage');
     }
   } catch (error) {
-    console.error('Error loading registered webhooks:', error);
+    log('ERROR', 'Error loading registered webhooks:', error);
     
     // Still try to display from localStorage if available
     const savedWebhook = localStorage.getItem('registeredWebhook');
     if (savedWebhook) {
+      log('REGISTRY', 'Falling back to raw localStorage data');
       try {
         document.getElementById('webhookDetails').textContent = JSON.stringify(JSON.parse(savedWebhook), null, 2);
       } catch (e) {
@@ -230,6 +352,7 @@ async function loadRegisteredWebhooks() {
 
 // Update UI with received webhooks
 function updateWebhooksUI() {
+  log('UI', `Updating UI with ${receivedWebhooks.length} webhooks`);
   const webhooksContainer = document.getElementById('receivedWebhooks');
   const noWebhooksElement = document.getElementById('noWebhooks');
   
@@ -249,18 +372,24 @@ function updateWebhooksUI() {
       
       webhooksContainer.appendChild(webhookElement);
     });
+    
+    log('UI', 'Updated UI with webhooks');
   } else {
     noWebhooksElement.classList.remove('hidden');
     webhooksContainer.innerHTML = '';
+    log('UI', 'No webhooks to display');
   }
 }
 
 // Initialize the page
 function init() {
+  log('INIT', 'Initializing application');
+  
   // Load stored webhooks
   loadStoredWebhooks();
   
   // Update UI with config values
+  log('CONFIG', 'Updating UI with configuration', CONFIG);
   document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
   document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
   
@@ -270,21 +399,31 @@ function init() {
     : `${CONFIG.VERCEL_URL}/webhook`;
   
   document.getElementById('publicUrl').textContent = webhookUrl;
+  log('CONFIG', `Using webhook URL: ${webhookUrl}`);
   
   // Set up event listeners
+  log('INIT', 'Setting up event listeners');
   document.getElementById('registerBtn').addEventListener('click', registerWebhook);
   document.getElementById('pingBtn').addEventListener('click', sendPing);
   document.getElementById('clearBtn').addEventListener('click', clearWebhooks);
   
   // Load webhooks data 
+  log('INIT', 'Loading initial webhook data');
   loadReceivedWebhooks();
   loadRegisteredWebhooks();
   
   // Set up polling for webhook updates
-  setInterval(loadReceivedWebhooks, 5000);
-  // Skip calling loadRegisteredWebhooks periodically since it's causing errors
-  // We'll rely on the initially loaded data instead
+  log('INIT', 'Setting up polling');
+  setInterval(() => {
+    log('POLL', 'Polling for webhook updates');
+    loadReceivedWebhooks();
+  }, 5000);
+  
+  log('INIT', 'Initialization complete');
 }
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  log('DOM', 'DOM content loaded, starting initialization');
+  init();
+});
