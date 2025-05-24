@@ -1,4 +1,4 @@
-// Storage for webhooks using localStorage
+// Storage for webhooks using localStorage as fallback
 let receivedWebhooks = [];
 
 // Load webhooks from local storage (fallback)
@@ -84,68 +84,69 @@ async function registerWebhook() {
   }
 }
 
-// Send ping function with fallback mechanism
+// Send ping function - fixed to use the API instead of opening new tab
 async function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
   
+  pingBtn.disabled = true;
+  statusElement.className = 'status';
+  statusElement.innerHTML = 'Sending ping...';
+  statusElement.classList.remove('hidden');
+  
   try {
-    pingBtn.disabled = true;
-    statusElement.className = 'status';
-    statusElement.innerHTML = 'Sending ping...';
-    statusElement.classList.remove('hidden');
+    // Use our API endpoint
+    const response = await fetch('/api/ping');
     
-    try {
-      // Try to use our API endpoint
-      const response = await fetch('/api/ping');
+    // If the API call worked, show success
+    if (response.ok) {
+      const data = await response.json();
       
-      if (response.ok) {
-        const data = await response.json();
-        
-        statusElement.className = 'status success';
-        statusElement.innerHTML = `
-          <p>Ping sent successfully!</p>
-          <p>Check below for any received webhooks in a few moments.</p>
-        `;
-        
-        // Refresh webhooks after a short delay
-        setTimeout(loadReceivedWebhooks, 2000);
-        return;
-      }
-    } catch (apiError) {
-      console.warn('API endpoint failed, using direct method:', apiError);
+      statusElement.className = 'status success';
+      statusElement.innerHTML = `
+        <p>Ping sent successfully!</p>
+        <p>Check below for received webhooks in a few moments.</p>
+      `;
+      
+      // Check for webhooks after a delay
+      setTimeout(() => {
+        loadReceivedWebhooks();
+        // Check again after a longer delay
+        setTimeout(loadReceivedWebhooks, 3000);
+      }, 1500);
+    } else {
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
     }
+  } catch (error) {
+    console.error('Error sending ping:', error);
     
-    // Fallback: Open the ping URL directly in a new tab
-    window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
-    
-    // Show success message for fallback approach
-    statusElement.className = 'status success';
+    statusElement.className = 'status error';
     statusElement.innerHTML = `
-      <p>Ping opened in a new tab.</p>
-      <p>After completing verification (if needed), check below for received webhooks.</p>
-      <p><button id="addDemoBtn" class="btn-sm">Add Demo Webhook</button></p>
+      <p>Error sending ping: ${error.message}</p>
+      <p>Falling back to direct method...</p>
     `;
     
-    // Add event listener to the demo button
+    // Fallback method - open in new tab
     setTimeout(() => {
-      const demoBtn = document.getElementById('addDemoBtn');
-      if (demoBtn) {
-        demoBtn.addEventListener('click', addDemoWebhook);
-      }
-    }, 10);
-    
-  } catch (error) {
-    statusElement.className = 'status error';
-    statusElement.innerHTML = `Error: ${error.message}`;
+      window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
+      
+      statusElement.className = 'status';
+      statusElement.innerHTML = `
+        <p>Ping request opened in new browser tab.</p>
+        <p>After completing any verification steps, check for webhooks below.</p>
+      `;
+      
+      // Check for webhooks after some time
+      setTimeout(loadReceivedWebhooks, 3000);
+    }, 1500);
   } finally {
     setTimeout(() => {
       pingBtn.disabled = false;
-    }, 1000);
+    }, 2000);
   }
 }
 
-// Add a demo webhook
+// Add a demo webhook (only if needed)
 function addDemoWebhook() {
   const newWebhook = {
     timestamp: new Date().toISOString(),
@@ -183,32 +184,31 @@ function clearWebhooks() {
   updateWebhooksUI();
 }
 
-// Fetch received webhooks from the API with fallback
+// Load received webhooks from the API
 async function loadReceivedWebhooks() {
   try {
-    try {
-      // Try to use the API first
-      const response = await fetch('/api/received-webhooks');
-      
-      if (response.ok) {
-        const webhooks = await response.json();
-        
-        if (webhooks && webhooks.length > 0) {
-          receivedWebhooks = webhooks;
-          saveWebhooks();
-          updateWebhooksUI();
-          return;
-        }
-      }
-    } catch (apiError) {
-      console.warn('API endpoint not available, using localStorage:', apiError);
-    }
+    console.log("Fetching webhooks from API...");
+    const response = await fetch('/api/received-webhooks');
     
-    // Fallback: Just use localStorage data (already loaded in init())
-    updateWebhooksUI();
+    if (response.ok) {
+      const webhooks = await response.json();
+      console.log("Received webhooks:", webhooks);
+      
+      // If we got data from the API, use it
+      if (Array.isArray(webhooks) && webhooks.length > 0) {
+        receivedWebhooks = webhooks;
+        saveWebhooks();
+      }
+    } else {
+      console.warn(`API returned status ${response.status}`);
+    }
   } catch (error) {
-    console.error('Error loading webhooks:', error);
+    console.error('Error loading webhooks from API:', error);
+    console.log('Using local storage data instead');
   }
+  
+  // Always update UI with whatever data we have
+  updateWebhooksUI();
 }
 
 // Update UI with received webhooks
@@ -216,7 +216,7 @@ function updateWebhooksUI() {
   const webhooksContainer = document.getElementById('receivedWebhooks');
   const noWebhooksElement = document.getElementById('noWebhooks');
   
-  if (receivedWebhooks.length > 0) {
+  if (receivedWebhooks && receivedWebhooks.length > 0) {
     noWebhooksElement.classList.add('hidden');
     webhooksContainer.innerHTML = '';
     
@@ -257,9 +257,6 @@ function init() {
   // Load received webhooks from the API
   loadReceivedWebhooks();
   
-  // Show webhooks
-  updateWebhooksUI();
-  
   // Display registered webhook if exists
   const savedWebhook = localStorage.getItem('registeredWebhook');
   if (savedWebhook) {
@@ -267,7 +264,7 @@ function init() {
     document.getElementById('webhookInfo').classList.remove('hidden');
   }
   
-  // Set up polling for webhook updates
+  // Set up periodic polling for new webhooks
   setInterval(loadReceivedWebhooks, 5000);
 }
 

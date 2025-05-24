@@ -13,26 +13,36 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Get the webhook server URL from the configuration
+    // Get the webhook server URL
     const WEBHOOK_SERVER = 'https://8636-91-101-72-250.ngrok-free.app';
     
     // Send the ping request to the webhook server
     const response = await axios.get(`${WEBHOOK_SERVER}/ping`, {
-      timeout: 8000 // 8 second timeout
+      timeout: 10000 // 10 second timeout
     });
     
     // Return the response from the webhook server
     return res.status(200).json({
       success: true,
-      message: 'Ping sent successfully',
+      message: 'Ping sent successfully! Check below for webhooks in a moment.',
       response: response.data
     });
   } catch (error) {
     console.error('Error sending ping:', error);
     
+    // Try to provide helpful error information
+    let errorMessage = 'Failed to send ping';
+    if (error.response) {
+      errorMessage += `: ${error.response.status} ${error.response.statusText}`;
+    } else if (error.request) {
+      errorMessage += ': No response received from server';
+    } else {
+      errorMessage += `: ${error.message}`;
+    }
+    
     return res.status(500).json({
       success: false,
-      message: 'Failed to send ping',
+      message: errorMessage,
       error: error.message
     });
   }

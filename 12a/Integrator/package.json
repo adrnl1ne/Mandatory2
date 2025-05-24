@@ -4,6 +4,7 @@
   "description": "Webhook integrator for SI Mandatory 2",
   "scripts": {
     "start": "vercel dev",
+    "build": "vercel build",
     "deploy": "vercel deploy"
   },
   "dependencies": {

@@ -12,46 +12,57 @@ module.exports = (req, res) => {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
-  // Handle GET requests (retrieve webhooks)
-  if (req.method === 'GET') {
-    // Return some demo data if we don't have real webhooks yet
-    if (receivedWebhooks.length === 0) {
-      return res.status(200).json([
-        {
-          timestamp: new Date().toISOString(),
-          data: {
-            event: "demo_webhook",
-            message: "This is a demonstration webhook. Real webhooks will appear here when received.",
-            timestamp: new Date().toISOString()
-          }
-        }
-      ]);
-    }
-    
-    return res.status(200).json(receivedWebhooks);
-  }
 
+  // Initialize global storage if it doesn't exist
+  if (typeof global.receivedWebhooks === 'undefined') {
+    global.receivedWebhooks = [];
+  }
+  
   // Handle POST requests (store new webhook)
   if (req.method === 'POST') {
     try {
-      // Store a new webhook
       const webhook = req.body;
-      webhook.timestamp = new Date().toISOString();
       
-      // Add to the beginning of the array
-      receivedWebhooks.unshift(webhook);
-      
-      // Keep only the most recent 5 webhooks
-      if (receivedWebhooks.length > 5) {
-        receivedWebhooks = receivedWebhooks.slice(0, 5);
+      // Make sure timestamp exists
+      if (!webhook.timestamp) {
+        webhook.timestamp = new Date().toISOString();
       }
       
-      return res.status(200).json({ success: true, webhooks: receivedWebhooks });
+      // Add to the beginning of the array
+      global.receivedWebhooks.unshift(webhook);
+      
+      // Keep only the most recent 5 webhooks
+      if (global.receivedWebhooks.length > 5) {
+        global.receivedWebhooks = global.receivedWebhooks.slice(0, 5);
+      }
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Webhook stored',
+        webhooks: global.receivedWebhooks 
+      });
     } catch (error) {
       console.error('Error storing webhook:', error);
       return res.status(500).json({ success: false, error: 'Failed to store webhook' });
     }
+  }
+  
+  // Handle GET requests (retrieve webhooks)
+  if (req.method === 'GET') {
+    // If we have stored webhooks, return them
+    if (global.receivedWebhooks && global.receivedWebhooks.length > 0) {
+      return res.status(200).json(global.receivedWebhooks);
+    } 
+    
+    // Otherwise return a sample webhook
+    return res.status(200).json([{
+      timestamp: new Date().toISOString(),
+      data: {
+        event: "welcome",
+        message: "Your webhooks will appear here once received.",
+        note: "This is just a placeholder. Real webhooks will replace this."
+      }
+    }]);
   }
   
   // Any other method is not allowed
