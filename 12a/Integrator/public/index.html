@@ -106,17 +106,31 @@
     </div>
   </div>
   
-  <script src="js/config.js"></script>
+  <!-- Replace external config file with inline configuration -->
+  <script>
+    // Inline configuration for remote services
+    const CONFIG = {
+      // Your actual Vercel URL where the integrator is deployed
+      VERCEL_URL: "https://12aintegrator.vercel.app",
+      
+      // The ngrok URL of the webhook system
+      WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
+    };
+  </script>
   <script>
     // Fetch configuration from the server
     async function fetchConfig() {
-      const response = await fetch(`${CONFIG.VERCEL_URL}/api/config`);
-      const data = await response.json();
-      
-      // Update the UI with configuration
-      document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
-      document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
-      document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
+      try {
+        const response = await fetch(`${CONFIG.VERCEL_URL}/api/config`);
+        const data = await response.json();
+        
+        // Update the UI with configuration
+        document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
+        document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
+        document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
+      } catch (error) {
+        console.error('Error fetching config:', error);
+      }
     }
 
     // Register webhook with the server
