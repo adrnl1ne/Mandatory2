@@ -13,6 +13,7 @@ function log(area, message, data = null) {
 // Webhook receiver endpoint
 module.exports = async (req, res) => {
   log('REQUEST', `${req.method} ${req.url || 'webhook endpoint'}`);
+  log('HEADERS', 'Request headers:', req.headers);
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -42,6 +43,13 @@ module.exports = async (req, res) => {
     
     log('WEBHOOK', 'Created webhook data object');
     
+    // Log the webhook for inspection
+    log('WEBHOOK_DATA', 'Full webhook content:', {
+      timestamp: webhookData.timestamp,
+      data: webhookData.data,
+      headers: req.headers
+    });
+    
     // Try to forward the webhook to the server endpoint
     try {
       log('FORWARD', 'Attempting to forward webhook to server endpoint');
@@ -62,7 +70,6 @@ module.exports = async (req, res) => {
       // Continue even if forwarding fails
     }
     
-    // Return a success response
     log('RESPONSE', 'Sending success response');
     return res.status(200).json({ 
       success: true, 

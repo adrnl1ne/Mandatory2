@@ -232,16 +232,31 @@ function clearWebhooks() {
   log('CLEAR', 'Webhooks cleared');
 }
 
-// Load received webhooks from the server
+// Load received webhooks from the server with enhanced logging
 async function loadReceivedWebhooks() {
   log('LOAD', 'Loading received webhooks from API');
   try {
-    const response = await fetch('/api/received-webhooks');
+    // Log URL being fetched
+    const url = '/api/received-webhooks';
+    log('FETCH', `Fetching from: ${url}`);
+    
+    const startTime = Date.now();
+    const response = await fetch(url);
+    const endTime = Date.now();
+    
+    log('FETCH', `Fetch completed in ${endTime - startTime}ms`);
     log('LOAD', `API response status: ${response.status}`);
     
     if (response.ok) {
+      const contentType = response.headers.get('content-type');
+      log('RESPONSE', `Content-Type: ${contentType}`);
+      
       const webhooks = await response.json();
       log('LOAD', `Received ${webhooks.length} webhooks from API`);
+      
+      if (webhooks.length > 0) {
+        log('DEBUG', 'First webhook:', webhooks[0]);
+      }
       
       // If we got real webhooks from the server, use them
       if (Array.isArray(webhooks) && webhooks.length > 0) {
@@ -381,6 +396,51 @@ function updateWebhooksUI() {
   }
 }
 
+// Run the webhook self-test
+async function testWebhook() {
+  log('TEST', 'Test webhook button clicked');
+  const statusElement = document.getElementById('pingStatus');
+  
+  statusElement.className = 'status';
+  statusElement.innerHTML = 'Testing webhook reception...';
+  statusElement.classList.remove('hidden');
+  
+  try {
+    log('TEST', 'Calling test-webhook endpoint');
+    const response = await fetch('/api/test-webhook');
+    log('TEST', `Test response status: ${response.status}`);
+    
+    const data = await response.json();
+    log('TEST', 'Test response data:', data);
+    
+    if (data.success) {
+      statusElement.className = 'status success';
+      statusElement.innerHTML = `
+        <p>✅ Webhook test successful!</p>
+        <p>The webhook was properly sent and received.</p>
+      `;
+      
+      // Check for webhooks
+      setTimeout(loadReceivedWebhooks, 1000);
+    } else {
+      statusElement.className = 'status error';
+      statusElement.innerHTML = `
+        <p>⚠️ Webhook test partially successful</p>
+        <p>The webhook was sent, but was not found in received webhooks.</p>
+        <p>This may indicate an issue with webhook storage or processing.</p>
+      `;
+    }
+  } catch (error) {
+    log('ERROR', 'Test webhook error:', error);
+    
+    statusElement.className = 'status error';
+    statusElement.innerHTML = `
+      <p>❌ Webhook test failed: ${error.message}</p>
+      <p>There may be an issue with the webhook endpoint or serverless function.</p>
+    `;
+  }
+}
+
 // Initialize the page
 function init() {
   log('INIT', 'Initializing application');
@@ -406,6 +466,11 @@ function init() {
   document.getElementById('registerBtn').addEventListener('click', registerWebhook);
   document.getElementById('pingBtn').addEventListener('click', sendPing);
   document.getElementById('clearBtn').addEventListener('click', clearWebhooks);
+  
+  // Add test webhook button listener
+  if (document.getElementById('testWebhookBtn')) {
+    document.getElementById('testWebhookBtn').addEventListener('click', testWebhook);
+  }
   
   // Load webhooks data 
   log('INIT', 'Loading initial webhook data');

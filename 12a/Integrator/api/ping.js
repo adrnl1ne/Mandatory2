@@ -10,9 +10,24 @@ function log(area, message, data = null) {
   }
 }
 
+// Add cloud logging if available
+async function cloudLog(message, data) {
+  try {
+    // This could send logs to a more permanent storage
+    console.log(`CLOUD_LOG: ${message}`, data);
+    
+    // Return true if logging was successful
+    return true;
+  } catch (error) {
+    console.error('Error in cloud logging:', error);
+    return false;
+  }
+}
+
 // Export a function that handles the request
 module.exports = async (req, res) => {
   log('REQUEST', `${req.method} ${req.url || 'ping endpoint'}`);
+  await cloudLog('Ping requested', { method: req.method, ip: req.headers['x-forwarded-for'] || 'unknown' });
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,6 +46,7 @@ module.exports = async (req, res) => {
     const pingUrl = `${WEBHOOK_SERVER}/ping?from=vercel&t=${Date.now()}`;
     
     log('PING', `Sending ping to: ${pingUrl}`);
+    await cloudLog('Sending ping', { url: pingUrl });
     
     // Send the ping request to the webhook server
     const response = await axios.get(pingUrl, {
@@ -38,6 +54,7 @@ module.exports = async (req, res) => {
     });
     
     log('PING', 'Ping successful', response.data);
+    await cloudLog('Ping successful', response.data);
     
     // Return the response from the webhook server
     log('RESPONSE', 'Sending success response');
@@ -53,6 +70,11 @@ module.exports = async (req, res) => {
         status: error.response.status,
         data: error.response.data
       } : null
+    });
+    
+    await cloudLog('Ping failed', {
+      error: error.message,
+      stack: error.stack
     });
     
     // Try to provide helpful error information

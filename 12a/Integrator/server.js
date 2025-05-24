@@ -48,6 +48,16 @@ app.use((req, res, next) => {
 app.post('/webhook', (req, res) => {
   log('WEBHOOK', 'Received webhook', req.body);
   
+  // Add more detailed logging for webhook inspection
+  log('WEBHOOK_DETAILED', 'Full request information', {
+    headers: req.headers,
+    body: req.body,
+    method: req.method,
+    path: req.path,
+    query: req.query,
+    ip: req.ip
+  });
+  
   const webhookData = {
     timestamp: new Date().toISOString(),
     data: req.body
@@ -62,6 +72,9 @@ app.post('/webhook', (req, res) => {
     receivedWebhooks = receivedWebhooks.slice(0, 5);
     log('WEBHOOK', 'Trimmed webhooks to 5');
   }
+  
+  // Log success
+  log('WEBHOOK', 'Webhook successfully received and stored');
   
   // Return success
   log('WEBHOOK', 'Returning success response');
