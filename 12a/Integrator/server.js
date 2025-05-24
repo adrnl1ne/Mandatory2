@@ -176,10 +176,9 @@ app.post('/api/register', async (req, res) => {
 
 // Handle all other API routes
 app.all('/api/*', (req, res) => {
-  log('API', `404 Not Found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ 
     error: 'API endpoint not found',
-    availableEndpoints: ['/api/ping', '/api/received-webhooks', '/api/register']
+    availableEndpoints: ['/api/ping', '/api/received-webhooks']
   });
 });
 
