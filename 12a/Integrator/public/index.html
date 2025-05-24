@@ -65,8 +65,8 @@
   
   <div class="container">
     <h2>Configuration</h2>
-    <p>Webhook Server: <a id="webhookServerUrl" href="#" target="_blank">Loading...</a></p>
-    <p>Public URL (for webhook reception): <span id="publicUrl">Loading...</span></p>
+    <p>Webhook Server: <a id="webhookServerUrl" href="https://8636-91-101-72-250.ngrok-free.app" target="_blank">https://8636-91-101-72-250.ngrok-free.app</a></p>
+    <p>Public URL (for webhook reception): <span id="publicUrl">https://12aintegrator.vercel.app/webhook</span></p>
   </div>
   
   <div class="container">
@@ -94,7 +94,151 @@
     <div id="receivedWebhooks"></div>
   </div>
   
-  <!-- Include the app.js file -->
-  <script src="/js/app.js"></script>
+  <script>
+    // Configuration
+    const CONFIG = {
+      VERCEL_URL: "https://12aintegrator.vercel.app",
+      WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
+    };
+    
+    // In-memory storage for received webhooks (will be reset on page refresh)
+    let receivedWebhooks = [];
+    
+    // Handle register button click
+    document.getElementById('registerBtn').addEventListener('click', async function() {
+      const registerBtn = document.getElementById('registerBtn');
+      const statusElement = document.getElementById('registerStatus');
+      
+      try {
+        registerBtn.disabled = true;
+        statusElement.className = 'status';
+        statusElement.innerHTML = 'Registering webhook...';
+        statusElement.classList.remove('hidden');
+        
+        // Create webhook registration data
+        const webhookData = {
+          url: `${CONFIG.VERCEL_URL}/webhook`,
+          events: ["payment_received", "invoice_processed", "order_created", "order_shipped"],
+          description: "Webhook integrator endpoint"
+        };
+        
+        // Make direct request to webhook server
+        const response = await fetch(`${CONFIG.WEBHOOK_SERVER}/register-webhook`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(webhookData)
+        });
+        
+        const data = await response.json();
+        
+        // Display success
+        statusElement.className = 'status success';
+        statusElement.innerHTML = 'Webhook registered successfully!';
+        
+        // Display webhook details
+        document.getElementById('webhookDetails').textContent = JSON.stringify(webhookData, null, 2);
+        document.getElementById('webhookInfo').classList.remove('hidden');
+      } catch (error) {
+        statusElement.className = 'status error';
+        statusElement.innerHTML = `Error: ${error.message}`;
+      } finally {
+        registerBtn.disabled = false;
+      }
+    });
+    
+    // Handle ping button click
+    document.getElementById('pingBtn').addEventListener('click', function() {
+      const pingBtn = document.getElementById('pingBtn');
+      const statusElement = document.getElementById('pingStatus');
+      
+      try {
+        pingBtn.disabled = true;
+        statusElement.className = 'status';
+        statusElement.innerHTML = '';
+        statusElement.classList.remove('hidden');
+        
+        // Open the ping URL directly in a new tab
+        window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
+        
+        // Show success message
+        statusElement.className = 'status success';
+        statusElement.innerHTML = `
+          <p>Ping request opened in new browser tab.</p>
+          <p>After completing any ngrok verification steps, check back here for received webhooks.</p>
+        `;
+      } catch (error) {
+        statusElement.className = 'status error';
+        statusElement.innerHTML = `Error: ${error.message}`;
+      } finally {
+        setTimeout(() => {
+          pingBtn.disabled = false;
+        }, 1000);
+      }
+    });
+    
+    // Simulate received webhooks (since we can't actually receive them without a server)
+    function simulateReceivedWebhook() {
+      // Add a simulated webhook
+      receivedWebhooks.unshift({
+        timestamp: new Date().toISOString(),
+        data: {
+          event: "payment_received",
+          message: "This is a simulated webhook response",
+          amount: Math.floor(Math.random() * 1000),
+          currency: "USD",
+          sent_at: new Date().toISOString()
+        }
+      });
+      
+      // Keep only the last 5 webhooks
+      if (receivedWebhooks.length > 5) {
+        receivedWebhooks = receivedWebhooks.slice(0, 5);
+      }
+      
+      // Update the UI
+      updateReceivedWebhooks();
+    }
+    
+    // Update the UI with received webhooks
+    function updateReceivedWebhooks() {
+      const webhooksContainer = document.getElementById('receivedWebhooks');
+      const noWebhooksElement = document.getElementById('noWebhooks');
+      
+      if (receivedWebhooks.length > 0) {
+        noWebhooksElement.classList.add('hidden');
+        webhooksContainer.innerHTML = '';
+        
+        receivedWebhooks.forEach((webhook, index) => {
+          const webhookElement = document.createElement('div');
+          webhookElement.className = 'status';
+          webhookElement.style.marginBottom = '10px';
+          
+          const timeReceived = new Date(webhook.timestamp || Date.now()).toLocaleString();
+          webhookElement.innerHTML = `
+            <h4>Webhook #${index + 1} - ${timeReceived}</h4>
+            <pre>${JSON.stringify(webhook.data || webhook, null, 2)}</pre>
+          `;
+          
+          webhooksContainer.appendChild(webhookElement);
+        });
+      } else {
+        noWebhooksElement.classList.remove('hidden');
+        webhooksContainer.innerHTML = '';
+      }
+    }
+    
+    // Add event listener for the "Add test webhook" feature (for demo purposes)
+    document.addEventListener('keydown', function(e) {
+      // Press 'T' key to add a test webhook
+      if (e.key === 't' || e.key === 'T') {
+        simulateReceivedWebhook();
+      }
+    });
+    
+    // Add a test webhook after a few seconds (for demonstration)
+    setTimeout(simulateReceivedWebhook, 5000);
+  </script>
 </body>
 </html>
