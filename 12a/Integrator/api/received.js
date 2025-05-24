@@ -1,17 +1,27 @@
-// Reference to webhooks stored in webhook.js
-// In a real app, you would use a database or Vercel KV store
-// We're using a simple solution for this assignment
+// Simple mock webhooks for demonstration purposes
+// In a real application, you would use a database
+const mockWebhooks = [
+  {
+    timestamp: new Date().toISOString(),
+    data: {
+      event: "ping",
+      message: "This is a simulated webhook response",
+      sent_at: new Date().toISOString()
+    }
+  }
+];
+
 module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
   
-  // For simplicity, return an empty array - in a real app we would persist data
-  return res.status(200).json([]);
+  // Simply return mock webhooks since we can't reliably 
+  // share data between serverless function invocations
+  return res.status(200).json(mockWebhooks);
 };

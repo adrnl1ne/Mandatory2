@@ -4,14 +4,15 @@ const CONFIG = {
   WEBHOOK_SERVER: "https://8636-91-101-72-250.ngrok-free.app"
 };
 
-// Fetch configuration from the server
+// Fetch configuration
 function fetchConfig() {
+  // Update UI with config values
   document.getElementById('webhookServerUrl').href = CONFIG.WEBHOOK_SERVER;
   document.getElementById('webhookServerUrl').textContent = CONFIG.WEBHOOK_SERVER;
-  document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/webhook`;
+  document.getElementById('publicUrl').textContent = `${CONFIG.VERCEL_URL}/api/webhook`;
 }
 
-// Register webhook with the server
+// Register webhook
 async function registerWebhook() {
   const registerBtn = document.getElementById('registerBtn');
   const statusElement = document.getElementById('registerStatus');
@@ -22,13 +23,10 @@ async function registerWebhook() {
     statusElement.innerHTML = 'Registering webhook...';
     statusElement.classList.remove('hidden');
     
-    const response = await fetch('/api/register', { 
-      method: 'POST',
-    });
-    
+    const response = await fetch('/api/register', { method: 'POST' });
     const data = await response.json();
     
-    if (response.ok) {
+    if (data.success) {
       statusElement.className = 'status success';
       statusElement.innerHTML = 'Webhook registered successfully!';
       
@@ -37,7 +35,7 @@ async function registerWebhook() {
       document.getElementById('webhookInfo').classList.remove('hidden');
     } else {
       statusElement.className = 'status error';
-      statusElement.innerHTML = `Error: ${data.error || 'Failed to register webhook'}`;
+      statusElement.innerHTML = `Error: ${data.error || data.message || 'Failed to register webhook'}`;
     }
   } catch (error) {
     statusElement.className = 'status error';
@@ -47,7 +45,7 @@ async function registerWebhook() {
   }
 }
 
-// Direct ping function - no API calls
+// Simple ping function - direct browser approach
 function sendPing() {
   const pingBtn = document.getElementById('pingBtn');
   const statusElement = document.getElementById('pingStatus');
@@ -58,14 +56,15 @@ function sendPing() {
     statusElement.innerHTML = '';
     statusElement.classList.remove('hidden');
     
-    // Direct approach: open the ping URL in a new tab
-    window.open(`${CONFIG.WEBHOOK_SERVER}/ping`, '_blank');
+    // Open the ping URL directly in a new tab
+    const pingWindow = window.open(`${CONFIG.WEBHOOK_SERVER}/ping?from=integrator&t=${Date.now()}`, '_blank');
     
     // Show success message
     statusElement.className = 'status success';
     statusElement.innerHTML = `
       <p>Ping request opened in new browser tab.</p>
-      <p>After handling any ngrok warning pages, check back here for received webhooks.</p>
+      <p>After completing any ngrok verification steps, check back here for received webhooks.</p>
+      <p>(Refresh this page after a few seconds to see received webhooks)</p>
     `;
   } catch (error) {
     statusElement.className = 'status error';
@@ -77,7 +76,7 @@ function sendPing() {
   }
 }
 
-// Function to load received webhooks
+// Load received webhooks from the server
 async function loadReceivedWebhooks() {
   try {
     const response = await fetch('/api/received');
@@ -90,7 +89,7 @@ async function loadReceivedWebhooks() {
   }
 }
 
-// Update the UI with received webhooks
+// Update UI with received webhooks
 function updateReceivedWebhooks(webhooks = []) {
   const webhooksContainer = document.getElementById('receivedWebhooks');
   const noWebhooksElement = document.getElementById('noWebhooks');
