@@ -6,7 +6,7 @@ import "firebase/compat/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC3v0hEe1wmfhdWAKpeJvSMSBvUI-BjGVA",
+  apiKey: FIREBASE_TOKEN,
   authDomain: "webrtc-dc295.firebaseapp.com",
   projectId: "webrtc-dc295",
   storageBucket: "webrtc-dc295.appspot.com", // Fixed the storage bucket URL

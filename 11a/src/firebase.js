@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDaEwPkHooTPyygQCXRIMaTVKvo3DcAhvw",
+  apiKey: FIREBASE_TOKEN,
   authDomain: "a-auth-integration.firebaseapp.com",
   projectId: "a-auth-integration",
   storageBucket: "a-auth-integration.firebasestorage.app", // Note: this should be a-auth-integration.appspot.com if not working
