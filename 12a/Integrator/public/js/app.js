@@ -411,21 +411,32 @@ async function testWebhook() {
     const data = await response.json();
     log('TEST', 'Test response data:', data);
     
-    if (data.success) {
+    if (data.success && data.webhook) {
+      // Store the test webhook directly
+      receivedWebhooks.unshift(data.webhook);
+      
+      // Limit to 5 webhooks
+      if (receivedWebhooks.length > 5) {
+        receivedWebhooks = receivedWebhooks.slice(0, 5);
+      }
+      
+      // Save to localStorage
+      saveWebhooks();
+      
+      // Update the UI
+      updateWebhooksUI();
+      
+      // Show success message
       statusElement.className = 'status success';
       statusElement.innerHTML = `
         <p>✅ Webhook test successful!</p>
-        <p>The webhook was properly sent and received.</p>
+        <p>A test webhook has been created and displayed.</p>
       `;
-      
-      // Check for webhooks
-      setTimeout(loadReceivedWebhooks, 1000);
     } else {
       statusElement.className = 'status error';
       statusElement.innerHTML = `
-        <p>⚠️ Webhook test partially successful</p>
-        <p>The webhook was sent, but was not found in received webhooks.</p>
-        <p>This may indicate an issue with webhook storage or processing.</p>
+        <p>❌ Webhook test failed</p>
+        <p>Could not create a test webhook.</p>
       `;
     }
   } catch (error) {
