@@ -1,10 +1,11 @@
 const swaggerJSDoc = require('swagger-jsdoc');
 const path = require('path');
 
-// Determine the server URL (local or production)
+// Use MAIN_DOMAIN environment variable if available, otherwise use VERCEL_URL or localhost
 const serverUrl = process.env.MAIN_DOMAIN 
-  ? `https://${process.env.VERCEL_URL}`
-  : 'http://localhost:3000';
+  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+console.log('Using server URL:', serverUrl);
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -20,7 +21,7 @@ const swaggerDefinition = {
   servers: [
     {
       url: serverUrl,
-      description: process.env.VERCEL_URL ? 'Production server' : 'Development server',
+      description: 'API Server',
     },
   ],
   tags: [
@@ -103,7 +104,7 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  apis: [path.join(__dirname, './routes/*.js'), path.join(__dirname, 'index.js')],
+  apis: [path.join(__dirname, './routes/*.js')],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
