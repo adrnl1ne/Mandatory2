@@ -2,7 +2,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
 const path = require('path');
 
 // Determine the server URL (local or production)
-const serverUrl = process.env.VERCEL_URL 
+const serverUrl = process.env.MAIN_DOMAIN 
   ? `https://${process.env.VERCEL_URL}`
   : 'http://localhost:3000';
 
