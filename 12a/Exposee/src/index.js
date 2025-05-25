@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(bodyParser.json());
 
-// Serve Swagger UI with CDN
+// Serve Swagger UI with CDN1
 app.get('/api-docs', (req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/html' });
   res.write(`
